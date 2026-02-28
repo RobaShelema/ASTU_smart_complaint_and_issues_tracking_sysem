@@ -23,14 +23,14 @@ import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
 // Student Pages
-import StudentDashboard from './pages/student/StudentDashboard';
+import StudentDashboard from './pages/student/StudentDashBoard';
 import NewComplaint from './pages/student/NewComplaint';
 import MyComplaints from './pages/student/MyComplaints';
 import ComplaintDetails from './pages/student/ComplaintDetails';
 import StudentProfile from './pages/student/StudentProfile';
 
 // Staff Pages
-import StaffDashboard from './pages/staff/StaffDashboard';
+import StaffDashboard from './pages/staff/StaffDashBoard';
 import AssignedComplaints from './pages/staff/AssignedComplaints';
 import ComplaintResolution from './pages/staff/ComplaintResolution';
 import StaffProfile from './pages/staff/StaffProfile';
