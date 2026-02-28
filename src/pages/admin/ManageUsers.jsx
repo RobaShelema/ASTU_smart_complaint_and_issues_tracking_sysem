@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/api/adminService';
+import adminService from '../../services/api/adminService';
 import {
   Users,
   Search,

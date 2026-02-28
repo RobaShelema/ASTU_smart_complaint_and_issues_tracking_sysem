@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import AssignedComplaintsTable from '../../components/tables/AssignedComplaintsTable';
 import StatusFilter from '../../components/common/StatusFilter';
 import { Filter, Download, Clock, CheckCircle, AlertCircle } from 'lucide-react';

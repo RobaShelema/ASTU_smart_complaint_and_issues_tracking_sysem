@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { adminService } from '../../services/api/adminService';
+import adminService from '../../services/api/adminService';
 import StatsCard from '../../components/common/StatsCard';
 import ComplaintsChart from '../../components/charts/ComplaintsChart';
 import DepartmentChart from '../../components/charts/DepartmentChart';

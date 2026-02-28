@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import ComplaintForm from '../../components/forms/ComplaintForm';
 import ComplaintTable from '../../components/tables/ComplaintTable';
 import Chatbot from '../../components/chatbot/Chatbot';

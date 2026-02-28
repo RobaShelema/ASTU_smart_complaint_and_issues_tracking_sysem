@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { adminService } from '../../services/api/adminService';
+import adminService from '../../services/api/adminService';
 import ComplaintTable from '../../components/tables/ComplaintTable';
 import StatusFilter from '../../components/common/StatusFilter';
 import {

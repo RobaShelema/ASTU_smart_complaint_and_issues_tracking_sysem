@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import StatusBadge from '../../components/common/StatusBadge';
 import { 
   ArrowLeft, 

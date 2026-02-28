@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import ResolutionModal from '../../components/modals/ResolutionModal';
 import StatusBadge from '../../components/common/StatusBadge';
 import StatusTimeline from '../../components/common/StatusTimeline';

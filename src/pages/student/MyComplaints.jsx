@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import ComplaintTable from '../../components/tables/ComplaintTable';
 import StatusFilter from '../../components/common/StatusFilter';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import { FileText, Filter, Download, Calendar } from 'lucide-react';
 import toast from 'react-hot-toast';
 

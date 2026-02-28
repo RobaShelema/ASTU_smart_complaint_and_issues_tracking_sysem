@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { adminService } from '../../services/api/adminService';
+import adminService from '../../services/api/adminService';
 import {
   FileText,
   Download,

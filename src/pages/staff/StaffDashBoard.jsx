@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNotifications } from '../../context/NotificationContext';
-import { complaintService } from '../../services/api/complaintService';
+import complaintService from '../../services/api/complaintService';
 import AssignedComplaintsTable from '../../components/tables/AssignedComplaintsTable';
 import StatsCard from '../../components/common/StatsCard';
 import {
