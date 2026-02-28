@@ -1,63 +1,95 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { authService } from '../services/api/authService';
+import React, { createContext, useState, useEffect } from 'react';
+import authService from '../services/api/authService';
+import toast from 'react-hot-toast';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    const currentUser = authService.getCurrentUser();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setUser(currentUser);
-    setLoading(false);
+    checkAuthStatus();
   }, []);
 
+  const checkAuthStatus = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      if (token) {
+        // Verify token and get user profile
+        const userData = await authService.getProfile();
+        setUser(userData);
+        setIsAuthenticated(true);
+      }
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      localStorage.clear();
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const login = async (credentials) => {
-    const data = await authService.login(credentials);
-    setUser(data.user || null);
-    return data;
+    try {
+      const response = await authService.login(credentials);
+      setUser(response.user);
+      setIsAuthenticated(true);
+      toast.success('Login successful!');
+      return response;
+    } catch (error) {
+      toast.error(error.message || 'Login failed');
+      throw error;
+    }
   };
 
   const register = async (userData) => {
-    return authService.register(userData);
+    try {
+      const response = await authService.register(userData);
+      toast.success('Registration successful! Please check your email.');
+      return response;
+    } catch (error) {
+      toast.error(error.message || 'Registration failed');
+      throw error;
+    }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      setIsAuthenticated(false);
+      toast.success('Logged out successfully');
+    } catch (error) {
+      console.error('Logout error:', error);
+    }
   };
-  // Add these methods to your existing AuthContext
 
-
-  const updateUser = (userData) => {
-    setUser(prev => ({ ...prev, ...userData }));
-    localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
+  const updateProfile = async (profileData) => {
+    try {
+      const response = await authService.updateProfile(profileData);
+      setUser(response.user);
+      toast.success('Profile updated successfully');
+      return response;
+    } catch (error) {
+      toast.error(error.message || 'Failed to update profile');
+      throw error;
+    }
   };
 
-  const value = useMemo(
-    () => ({
-      user,
-      loading,
-      login,
-      register,
-      logout,
-      isAuthenticated: Boolean(user),
-    }),
-    [user, loading]
+  const value = {
+    user,
+    loading,
+    isAuthenticated,
+    login,
+    register,
+    logout,
+    updateProfile
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
   );
-
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
-
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-export default AuthContext;
