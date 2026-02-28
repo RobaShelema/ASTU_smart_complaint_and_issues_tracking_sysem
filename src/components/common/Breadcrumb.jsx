@@ -1,38 +1,54 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { ChevronRight, Home } from 'lucide-react';
-import { ROUTE_TITLES } from '../../routes/routeConfig';
+import { Home, ChevronRight } from 'lucide-react';
 
 const Breadcrumb = () => {
   const location = useLocation();
   const pathnames = location.pathname.split('/').filter(x => x);
 
+  // Format breadcrumb names
+  const formatName = (name) => {
+    return name
+      .split('-')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+  };
+
+  // Don't show breadcrumb on dashboard
+  if (pathnames.length === 0 || (pathnames.length === 1 && pathnames[0] === 'dashboard')) {
+    return null;
+  }
+
   return (
-    <nav className="flex mb-4" aria-label="Breadcrumb">
+    <nav className="flex" aria-label="Breadcrumb">
       <ol className="inline-flex items-center space-x-1 md:space-x-3">
         <li className="inline-flex items-center">
-          <Link to="/" className="text-gray-700 hover:text-blue-600">
-            <Home className="h-4 w-4" />
+          <Link
+            to="/"
+            className="inline-flex items-center text-sm font-medium text-gray-700 hover:text-blue-600"
+          >
+            <Home className="w-4 h-4 mr-2" />
+            Home
           </Link>
         </li>
+        
         {pathnames.map((name, index) => {
           const routeTo = `/${pathnames.slice(0, index + 1).join('/')}`;
           const isLast = index === pathnames.length - 1;
-          const title = ROUTE_TITLES[routeTo] || name.charAt(0).toUpperCase() + name.slice(1);
 
           return (
             <li key={name} className="flex items-center">
-              <ChevronRight className="h-4 w-4 text-gray-400" />
+              <ChevronRight className="w-4 h-4 text-gray-400" />
               {isLast ? (
-                <span className="text-gray-500 ml-1 md:ml-2 text-sm font-medium">
-                  {title}
+                <span className="ml-1 text-sm font-medium text-gray-500 md:ml-2">
+                  {formatName(name)}
                 </span>
               ) : (
                 <Link
                   to={routeTo}
-                  className="text-gray-700 hover:text-blue-600 ml-1 md:ml-2 text-sm font-medium"
+                  className="ml-1 text-sm font-medium text-gray-700 hover:text-blue-600 md:ml-2"
                 >
-                  {title}
+                  {formatName(name)}
                 </Link>
               )}
             </li>

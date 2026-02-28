@@ -1,120 +1,156 @@
-import React, { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { ROUTES } from '../../routes/routeConfig';
-import { Menu, X, User, LogOut, Bell } from 'lucide-react';
+import { useNotifications } from '../../context/NotificationContext';
+import NotificationBell from '../feedback/NotificationBell';
+import { 
+  Menu, 
+  User, 
+  LogOut, 
+  Settings, 
+  HelpCircle,
+  ChevronDown,
+  Bell
+} from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
+  const { unreadCount } = useNotifications();
   const navigate = useNavigate();
-  const location = useLocation();
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef(null);
+
+  // Close profile dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (profileRef.current && !profileRef.current.contains(event.target)) {
+        setIsProfileOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleLogout = async () => {
     await logout();
-    navigate(ROUTES.LOGIN);
+    navigate('/login');
   };
 
-  const getDashboardLink = () => {
-    if (!user) return ROUTES.HOME;
-    switch(user.role) {
-      case 'student': return ROUTES.STUDENT_DASHBOARD;
-      case 'staff': return ROUTES.STAFF_DASHBOARD;
-      case 'admin': return ROUTES.ADMIN_DASHBOARD;
-      default: return ROUTES.HOME;
+  const getInitials = (name) => {
+    return name
+      ?.split(' ')
+      .map(word => word[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || 'U';
+  };
+
+  const getRoleColor = (role) => {
+    switch(role) {
+      case 'admin': return 'bg-purple-100 text-purple-800';
+      case 'staff': return 'bg-green-100 text-green-800';
+      default: return 'bg-blue-100 text-blue-800';
     }
   };
 
-  const navLinks = user ? [
-    { name: 'Dashboard', path: getDashboardLink() },
-    ...(user.role === 'student' ? [
-      { name: 'New Complaint', path: ROUTES.STUDENT_NEW_COMPLAINT },
-      { name: 'My Complaints', path: ROUTES.STUDENT_MY_COMPLAINTS }
-    ] : []),
-    ...(user.role === 'staff' ? [
-      { name: 'Assigned', path: ROUTES.STAFF_ASSIGNED }
-    ] : []),
-    ...(user.role === 'admin' ? [
-      { name: 'Complaints', path: ROUTES.ADMIN_COMPLAINTS },
-      { name: 'Users', path: ROUTES.ADMIN_USERS },
-      { name: 'Analytics', path: ROUTES.ADMIN_ANALYTICS }
-    ] : [])
-  ] : [];
-
   return (
-    <nav className="bg-white shadow-lg fixed w-full z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className="bg-white shadow-sm border-b border-gray-200 fixed w-full z-10">
+      <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
-          {/* Logo and brand */}
+          {/* Left section */}
           <div className="flex items-center">
-            <Link to={getDashboardLink()} className="flex items-center space-x-2">
-              <img src="/astu-logo.png" alt="ASTU" className="h-8 w-8" />
-              <span className="font-bold text-gray-800 text-lg hidden sm:block">
+            {/* Mobile menu button */}
+            <button
+              onClick={onMenuClick}
+              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
+            >
+              <Menu className="h-6 w-6" />
+            </button>
+
+            {/* Logo */}
+            <Link to="/" className="flex items-center ml-2 md:ml-0">
+              <img 
+                src="/astu-logo.png" 
+                alt="ASTU" 
+                className="h-8 w-8"
+                onError={(e) => {
+                  e.target.onerror = null;
+                  e.target.src = 'https://via.placeholder.com/32?text=ASTU';
+                }}
+              />
+              <span className="ml-2 font-semibold text-gray-800 hidden sm:block">
                 ASTU Complaint System
               </span>
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-4">
-            {navLinks.map((link) => (
-              <Link
-                key={link.path}
-                to={link.path}
-                className={`px-3 py-2 rounded-md text-sm font-medium ${
-                  location.pathname === link.path
-                    ? 'bg-blue-100 text-blue-700'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {link.name}
-              </Link>
-            ))}
-          </div>
-
-          {/* User menu and notifications */}
+          {/* Right section */}
           <div className="flex items-center space-x-4">
-            {user && (
-              <>
-                <button className="relative p-2 text-gray-600 hover:text-gray-900">
-                  <Bell className="h-5 w-5" />
-                  <span className="absolute top-0 right-0 block h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-                </button>
-                
-                <div className="relative">
-                  <button
-                    onClick={() => setIsMenuOpen(!isMenuOpen)}
-                    className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
-                  >
-                    <div className="h-8 w-8 rounded-full bg-blue-500 flex items-center justify-center">
-                      <User className="h-5 w-5 text-white" />
-                    </div>
-                    <span className="hidden md:block text-sm font-medium">
-                      {user.name}
-                    </span>
-                  </button>
+            {/* Notifications */}
+            <NotificationBell />
 
-                  {isMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1">
-                      <Link
-                        to={`/${user.role}/profile`}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                        onClick={() => setIsMenuOpen(false)}
-                      >
-                        Profile
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                      >
-                        <LogOut className="inline h-4 w-4 mr-2" />
-                        Logout
-                      </button>
-                    </div>
-                  )}
+            {/* Help */}
+            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full">
+              <HelpCircle className="h-5 w-5" />
+            </button>
+
+            {/* Profile Dropdown */}
+            <div className="relative" ref={profileRef}>
+              <button
+                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                className="flex items-center space-x-2 focus:outline-none"
+              >
+                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm">
+                  {getInitials(user?.name)}
                 </div>
-              </>
-            )}
+                <div className="hidden md:block text-left">
+                  <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                  <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-gray-500" />
+              </button>
+
+              {/* Dropdown Menu */}
+              {isProfileOpen && (
+                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border border-gray-200">
+                  <div className="px-4 py-2 border-b border-gray-100 md:hidden">
+                    <p className="text-sm font-medium text-gray-700">{user?.name}</p>
+                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
+                  </div>
+                  
+                  <Link
+                    to={`/${user?.role}/profile`}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Profile
+                  </Link>
+                  
+                  <Link
+                    to={`/${user?.role}/settings`}
+                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Settings
+                  </Link>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Role Badge (Mobile) */}
+            <span className={`md:hidden px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user?.role)}`}>
+              {user?.role}
+            </span>
           </div>
         </div>
       </div>
