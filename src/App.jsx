@@ -8,7 +8,6 @@ import { NotificationProvider } from './context/NotificationContext';
 import { ChatbotProvider } from './context/ChatbotContext';
 
 // Layout Components
-import MainLayout from './components/layout/MainLayout';
 import DashboardLayout from './components/layout/DashboardLayout';
 import AuthLayout from './components/layout/AuthLayout';
 
@@ -16,21 +15,22 @@ import AuthLayout from './components/layout/AuthLayout';
 import PrivateRoute from './routes/PrivateRoute';
 import PublicRoute from './routes/PublicRoute';
 
-// Auth Pages
+// Pages
+import LandingPage from './pages/LandingPage'; // Add this import
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
 // Student Pages
-import StudentDashboard from './pages/student/StudentDashBoard';
+import StudentDashboard from './pages/student/StudentDashboard';
 import NewComplaint from './pages/student/NewComplaint';
 import MyComplaints from './pages/student/MyComplaints';
 import ComplaintDetails from './pages/student/ComplaintDetails';
 import StudentProfile from './pages/student/StudentProfile';
 
 // Staff Pages
-import StaffDashboard from './pages/staff/StaffDashBoard';
+import StaffDashboard from './pages/staff/StaffDashboard';
 import AssignedComplaints from './pages/staff/AssignedComplaints';
 import ComplaintResolution from './pages/staff/ComplaintResolution';
 import StaffProfile from './pages/staff/StaffProfile';
@@ -53,7 +53,6 @@ import NotFound from './components/common/NotFound';
 // Global Components
 import Chatbot from './components/chatbot/Chatbot';
 import ErrorBoundary from './components/common/ErrorBoundary';
-import Loader from './components/common/Loader';
 
 // Route Constants
 import { ROUTES } from './routes/routeConfig';
@@ -68,7 +67,6 @@ function App() {
         <AuthProvider>
           <NotificationProvider>
             <ChatbotProvider>
-              {/* Toast Notifications */}
               <Toaster 
                 position="top-right"
                 toastOptions={{
@@ -77,30 +75,14 @@ function App() {
                     background: '#363636',
                     color: '#fff',
                   },
-                  success: {
-                    duration: 3000,
-                    icon: '✅',
-                    style: {
-                      background: '#10B981',
-                    },
-                  },
-                  error: {
-                    duration: 4000,
-                    icon: '❌',
-                    style: {
-                      background: '#EF4444',
-                    },
-                  },
-                  loading: {
-                    duration: 5000,
-                    icon: '⏳',
-                  },
                 }}
               />
 
-              {/* Routes Configuration */}
               <Routes>
-                {/* ========== PUBLIC ROUTES ========== */}
+                {/* Public Landing Page - THIS IS THE KEY FIX */}
+                <Route path="/" element={<LandingPage />} />
+
+                {/* Public Routes */}
                 <Route element={<PublicRoute />}>
                   <Route element={<AuthLayout />}>
                     <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -110,7 +92,7 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* ========== STUDENT ROUTES ========== */}
+                {/* Student Routes */}
                 <Route element={<PrivateRoute allowedRoles={['student']} />}>
                   <Route element={<DashboardLayout />}>
                     <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboard />} />
@@ -121,7 +103,7 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* ========== STAFF ROUTES ========== */}
+                {/* Staff Routes */}
                 <Route element={<PrivateRoute allowedRoles={['staff']} />}>
                   <Route element={<DashboardLayout />}>
                     <Route path={ROUTES.STAFF_DASHBOARD} element={<StaffDashboard />} />
@@ -132,7 +114,7 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* ========== ADMIN ROUTES ========== */}
+                {/* Admin Routes */}
                 <Route element={<PrivateRoute allowedRoles={['admin']} />}>
                   <Route element={<DashboardLayout />}>
                     <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
@@ -147,25 +129,12 @@ function App() {
                   </Route>
                 </Route>
 
-                {/* ========== ERROR ROUTES ========== */}
+                {/* Error Routes */}
                 <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
                 <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
                 
-                {/* ========== ROOT REDIRECT ========== */}
-                <Route 
-                  path="/" 
-                  element={
-                    <Navigate to={ROUTES.LOGIN} replace />
-                  } 
-                />
-                
-                {/* ========== CATCH ALL ========== */}
-                <Route 
-                  path="*" 
-                  element={
-                    <Navigate to={ROUTES.NOT_FOUND} replace />
-                  } 
-                />
+                {/* Catch all - redirect to 404 */}
+                <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
               </Routes>
 
               {/* Global Chatbot Component */}
