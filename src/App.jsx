@@ -1,11 +1,7 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-
-// Context Providers
-import { AuthProvider } from './context/AuthContext';
-import { NotificationProvider } from './context/NotificationContext';
-import { ChatbotProvider } from './context/ChatbotContext';
+import { AppProviders } from './context/AppProviders';
 
 // Layout Components
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -60,103 +56,91 @@ import { ROUTES } from './routes/routeConfig';
 // Styles
 import './index.css';
 
+function AppContent() {
+  return (
+    <>
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
+
+      <Routes>
+        {/* Public Landing Page */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* Auth Routes */}
+        <Route element={<PublicRoute />}>
+          <Route element={<AuthLayout />}>
+            <Route path={ROUTES.LOGIN} element={<Login />} />
+            <Route path={ROUTES.REGISTER} element={<Register />} />
+            <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+            <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
+          </Route>
+        </Route>
+
+        {/* Student Routes */}
+        <Route element={<PrivateRoute allowedRoles={['student']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboard />} />
+            <Route path={ROUTES.STUDENT_NEW_COMPLAINT} element={<NewComplaint />} />
+            <Route path={ROUTES.STUDENT_MY_COMPLAINTS} element={<MyComplaints />} />
+            <Route path={ROUTES.STUDENT_COMPLAINT_DETAIL} element={<ComplaintDetails />} />
+            <Route path={ROUTES.STUDENT_PROFILE} element={<StudentProfile />} />
+          </Route>
+        </Route>
+
+        {/* Staff Routes */}
+        <Route element={<PrivateRoute allowedRoles={['staff']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path={ROUTES.STAFF_DASHBOARD} element={<StaffDashboard />} />
+            <Route path={ROUTES.STAFF_ASSIGNED} element={<AssignedComplaints />} />
+            <Route path={ROUTES.STAFF_COMPLAINT_DETAIL} element={<ComplaintResolution />} />
+            <Route path={ROUTES.STAFF_RESOLVE} element={<ComplaintResolution />} />
+            <Route path={ROUTES.STAFF_PROFILE} element={<StaffProfile />} />
+          </Route>
+        </Route>
+
+        {/* Admin Routes */}
+        <Route element={<PrivateRoute allowedRoles={['admin']} />}>
+          <Route element={<DashboardLayout />}>
+            <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
+            <Route path={ROUTES.ADMIN_COMPLAINTS} element={<ManageComplaints />} />
+            <Route path={ROUTES.ADMIN_USERS} element={<ManageUsers />} />
+            <Route path={ROUTES.ADMIN_CATEGORIES} element={<ManageCategories />} />
+            <Route path={ROUTES.ADMIN_DEPARTMENTS} element={<ManageDepartments />} />
+            <Route path={ROUTES.ADMIN_ANALYTICS} element={<Analytics />} />
+            <Route path={ROUTES.ADMIN_REPORTS} element={<Reports />} />
+            <Route path={ROUTES.ADMIN_LOGS} element={<SystemLogs />} />
+            <Route path={ROUTES.ADMIN_SETTINGS} element={<Settings />} />
+          </Route>
+        </Route>
+
+        {/* Error Routes */}
+        <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
+        <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
+        
+        {/* Catch all */}
+        <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
+      </Routes>
+
+      {/* Global Chatbot */}
+      <Chatbot />
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <AuthProvider>
-          <NotificationProvider>
-            <ChatbotProvider>
-              <Toaster 
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#363636',
-                    color: '#fff',
-                  },
-                  success: {
-                    duration: 3000,
-                    icon: '✅',
-                    style: {
-                      background: '#10B981',
-                    },
-                  },
-                  error: {
-                    duration: 4000,
-                    icon: '❌',
-                    style: {
-                      background: '#EF4444',
-                    },
-                  },
-                }}
-              />
-
-              <Routes>
-                {/* Public Landing Page */}
-                <Route path="/" element={<LandingPage />} />
-
-                {/* Auth Routes */}
-                <Route element={<PublicRoute />}>
-                  <Route element={<AuthLayout />}>
-                    <Route path={ROUTES.LOGIN} element={<Login />} />
-                    <Route path={ROUTES.REGISTER} element={<Register />} />
-                    <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
-                    <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
-                  </Route>
-                </Route>
-
-                {/* Student Routes */}
-                <Route element={<PrivateRoute allowedRoles={['student']} />}>
-                  <Route element={<DashboardLayout />}>
-                    <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboard />} />
-                    <Route path={ROUTES.STUDENT_NEW_COMPLAINT} element={<NewComplaint />} />
-                    <Route path={ROUTES.STUDENT_MY_COMPLAINTS} element={<MyComplaints />} />
-                    <Route path={ROUTES.STUDENT_COMPLAINT_DETAIL} element={<ComplaintDetails />} />
-                    <Route path={ROUTES.STUDENT_PROFILE} element={<StudentProfile />} />
-                  </Route>
-                </Route>
-
-                {/* Staff Routes */}
-                <Route element={<PrivateRoute allowedRoles={['staff']} />}>
-                  <Route element={<DashboardLayout />}>
-                    <Route path={ROUTES.STAFF_DASHBOARD} element={<StaffDashboard />} />
-                    <Route path={ROUTES.STAFF_ASSIGNED} element={<AssignedComplaints />} />
-                    <Route path={ROUTES.STAFF_COMPLAINT_DETAIL} element={<ComplaintResolution />} />
-                    <Route path={ROUTES.STAFF_RESOLVE} element={<ComplaintResolution />} />
-                    <Route path={ROUTES.STAFF_PROFILE} element={<StaffProfile />} />
-                  </Route>
-                </Route>
-
-                {/* Admin Routes */}
-                <Route element={<PrivateRoute allowedRoles={['admin']} />}>
-                  <Route element={<DashboardLayout />}>
-                    <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
-                    <Route path={ROUTES.ADMIN_COMPLAINTS} element={<ManageComplaints />} />
-                    <Route path={ROUTES.ADMIN_USERS} element={<ManageUsers />} />
-                    <Route path={ROUTES.ADMIN_CATEGORIES} element={<ManageCategories />} />
-                    <Route path={ROUTES.ADMIN_DEPARTMENTS} element={<ManageDepartments />} />
-                    <Route path={ROUTES.ADMIN_ANALYTICS} element={<Analytics />} />
-                    <Route path={ROUTES.ADMIN_REPORTS} element={<Reports />} />
-                    <Route path={ROUTES.ADMIN_LOGS} element={<SystemLogs />} />
-                    <Route path={ROUTES.ADMIN_SETTINGS} element={<Settings />} />
-                  </Route>
-                </Route>
-
-                {/* Error Routes */}
-                <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
-                <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
-                
-                {/* Catch all */}
-                <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
-              </Routes>
-
-              {/* Global Chatbot */}
-              <Chatbot />
-            </ChatbotProvider>
-          </NotificationProvider>
-        </AuthProvider>
-      </BrowserRouter>
+      <AppProviders>
+        <AppContent />
+      </AppProviders>
     </ErrorBoundary>
   );
 }

@@ -1,9 +1,18 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from './AuthContext';
 import toast from 'react-hot-toast';
 
 // Create context
 const NotificationContext = createContext(null);
+
+// Custom hook
+export const useNotifications = () => {
+  const context = useContext(NotificationContext);
+  if (!context) {
+    throw new Error('useNotifications must be used within NotificationProvider');
+  }
+  return context;
+};
 
 // Notification types
 export const NOTIFICATION_TYPES = {
@@ -14,7 +23,9 @@ export const NOTIFICATION_TYPES = {
   COMPLAINT_UPDATE: 'complaint_update',
   NEW_COMPLAINT: 'new_complaint',
   ASSIGNMENT: 'assignment',
-  REMINDER: 'reminder'
+  REMINDER: 'reminder',
+  ESCALATION: 'escalation',
+  RESOLUTION: 'resolution'
 };
 
 // Notification priorities
@@ -26,20 +37,61 @@ export const NOTIFICATION_PRIORITY = {
 };
 
 export const NotificationProvider = ({ children }) => {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
+  
+  // State
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isConnected, setIsConnected] = useState(false);
-  const [ws, setWs] = useState(null);
+  const [connectionError, setConnectionError] = useState(null);
+  const [preferences, setPreferences] = useState({
+    sound: true,
+    desktop: true,
+    email: true,
+    inApp: true
+  });
 
-  // Load initial notifications from localStorage
+  // Refs
+  const wsRef = useRef(null);
+  const audioRef = useRef(null);
+  const reconnectTimeoutRef = useRef(null);
+
+  // Load notifications from localStorage on mount
   useEffect(() => {
     const savedNotifications = localStorage.getItem('notifications');
     if (savedNotifications) {
-      const parsed = JSON.parse(savedNotifications);
-      setNotifications(parsed);
-      setUnreadCount(parsed.filter(n => !n.read).length);
+      try {
+        const parsed = JSON.parse(savedNotifications);
+        setNotifications(parsed);
+        setUnreadCount(parsed.filter(n => !n.read).length);
+      } catch (error) {
+        console.error('Failed to parse saved notifications:', error);
+      }
     }
+
+    // Load preferences
+    const savedPrefs = localStorage.getItem('notificationPrefs');
+    if (savedPrefs) {
+      try {
+        setPreferences(JSON.parse(savedPrefs));
+      } catch (error) {
+        console.error('Failed to parse preferences:', error);
+      }
+    }
+
+    // Initialize audio
+    if (typeof window !== 'undefined') {
+      audioRef.current = new Audio('/notification.mp3');
+    }
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
   }, []);
 
   // Save notifications to localStorage
@@ -48,106 +100,161 @@ export const NotificationProvider = ({ children }) => {
     setUnreadCount(notifications.filter(n => !n.read).length);
   }, [notifications]);
 
-  // WebSocket connection for real-time notifications
+  // Save preferences
   useEffect(() => {
-    if (!user) return;
+    localStorage.setItem('notificationPrefs', JSON.stringify(preferences));
+  }, [preferences]);
 
-    // Connect to WebSocket server
+  // WebSocket connection
+  useEffect(() => {
+    if (!isAuthenticated || !user) return;
+
     const connectWebSocket = () => {
-      const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
-      const websocket = new WebSocket(`${wsUrl}?token=${localStorage.getItem('token')}`);
+      try {
+        const wsUrl = import.meta.env.VITE_WS_URL || 'ws://localhost:8080';
+        const token = localStorage.getItem('token');
+        
+        const ws = new WebSocket(`${wsUrl}?token=${token}`);
+        wsRef.current = ws;
 
-      websocket.onopen = () => {
-        console.log('WebSocket connected');
-        setIsConnected(true);
-        setWs(websocket);
-      };
+        ws.onopen = () => {
+          console.log('WebSocket connected');
+          setIsConnected(true);
+          setConnectionError(null);
+          
+          // Send authentication
+          ws.send(JSON.stringify({
+            type: 'auth',
+            userId: user.id,
+            role: user.role
+          }));
+        };
 
-      websocket.onmessage = (event) => {
-        try {
-          const notification = JSON.parse(event.data);
-          handleIncomingNotification(notification);
-        } catch (error) {
-          console.error('Failed to parse notification:', error);
-        }
-      };
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            handleIncomingNotification(data);
+          } catch (error) {
+            console.error('Failed to parse WebSocket message:', error);
+          }
+        };
 
-      websocket.onclose = () => {
-        console.log('WebSocket disconnected');
-        setIsConnected(false);
-        // Attempt to reconnect after 5 seconds
-        setTimeout(connectWebSocket, 5000);
-      };
+        ws.onerror = (error) => {
+          console.error('WebSocket error:', error);
+          setConnectionError('Connection error');
+          setIsConnected(false);
+        };
 
-      websocket.onerror = (error) => {
-        console.error('WebSocket error:', error);
-        setIsConnected(false);
-      };
-
-      return websocket;
-    };
-
-    const websocket = connectWebSocket();
-
-    return () => {
-      if (websocket) {
-        websocket.close();
+        ws.onclose = () => {
+          console.log('WebSocket disconnected');
+          setIsConnected(false);
+          
+          // Attempt to reconnect after 5 seconds
+          reconnectTimeoutRef.current = setTimeout(() => {
+            connectWebSocket();
+          }, 5000);
+        };
+      } catch (error) {
+        console.error('WebSocket connection failed:', error);
+        setConnectionError('Failed to connect');
+        
+        // Attempt to reconnect
+        reconnectTimeoutRef.current = setTimeout(() => {
+          connectWebSocket();
+        }, 10000);
       }
     };
-  }, [user]);
+
+    connectWebSocket();
+
+    return () => {
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+    };
+  }, [isAuthenticated, user]);
 
   // Handle incoming notification
-  const handleIncomingNotification = useCallback((notification) => {
+  const handleIncomingNotification = useCallback((data) => {
     const newNotification = {
-      id: notification.id || Date.now().toString(),
-      type: notification.type || NOTIFICATION_TYPES.INFO,
-      priority: notification.priority || NOTIFICATION_PRIORITY.MEDIUM,
-      title: notification.title,
-      message: notification.message,
-      timestamp: new Date().toISOString(),
+      id: data.id || `notif-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      type: data.type || NOTIFICATION_TYPES.INFO,
+      priority: data.priority || NOTIFICATION_PRIORITY.MEDIUM,
+      title: data.title || 'New Notification',
+      message: data.message,
+      timestamp: data.timestamp || new Date().toISOString(),
       read: false,
-      data: notification.data || {},
-      actionable: notification.actionable || false,
-      actions: notification.actions || []
+      data: data.data || {},
+      actionable: data.actionable || false,
+      actions: data.actions || [],
+      link: data.link || null
     };
 
-    setNotifications(prev => [newNotification, ...prev].slice(0, 50)); // Keep last 50 notifications
+    setNotifications(prev => [newNotification, ...prev].slice(0, 100)); // Keep last 100
 
     // Show toast based on priority
-    switch(newNotification.priority) {
-      case NOTIFICATION_PRIORITY.URGENT:
-        toast.error(newNotification.title || newNotification.message, {
-          duration: 6000,
-          icon: '🔴'
-        });
-        break;
-      case NOTIFICATION_PRIORITY.HIGH:
-        toast.error(newNotification.message, {
-          duration: 5000,
-          icon: '⚠️'
-        });
-        break;
-      case NOTIFICATION_PRIORITY.MEDIUM:
-        toast.success(newNotification.message, {
-          icon: '📢'
-        });
-        break;
-      default:
-        toast(newNotification.message, {
-          icon: 'ℹ️'
-        });
+    if (preferences.inApp) {
+      switch(newNotification.priority) {
+        case NOTIFICATION_PRIORITY.URGENT:
+          toast.error(newNotification.message, {
+            duration: 6000,
+            icon: '🔴',
+            id: newNotification.id
+          });
+          break;
+        case NOTIFICATION_PRIORITY.HIGH:
+          toast.error(newNotification.message, {
+            duration: 5000,
+            icon: '⚠️',
+            id: newNotification.id
+          });
+          break;
+        case NOTIFICATION_PRIORITY.MEDIUM:
+          toast.success(newNotification.message, {
+            icon: '📢',
+            id: newNotification.id
+          });
+          break;
+        default:
+          toast(newNotification.message, {
+            icon: 'ℹ️',
+            id: newNotification.id
+          });
+      }
     }
 
-    // Play sound for urgent notifications
-    if (newNotification.priority === NOTIFICATION_PRIORITY.URGENT) {
+    // Play sound for high priority
+    if (preferences.sound && ['urgent', 'high'].includes(newNotification.priority)) {
       playNotificationSound();
+    }
+
+    // Show desktop notification
+    if (preferences.desktop && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(newNotification.title, {
+        body: newNotification.message,
+        icon: '/icon.png',
+        tag: newNotification.id
+      });
+    }
+  }, [preferences]);
+
+  // Request notification permission
+  const requestNotificationPermission = useCallback(async () => {
+    if ('Notification' in window && Notification.permission !== 'granted') {
+      await Notification.requestPermission();
     }
   }, []);
 
   // Play notification sound
   const playNotificationSound = useCallback(() => {
-    const audio = new Audio('/notification.mp3');
-    audio.play().catch(error => console.log('Audio playback failed:', error));
+    if (audioRef.current) {
+      audioRef.current.play().catch(error => {
+        console.error('Failed to play notification sound:', error);
+      });
+    }
   }, []);
 
   // Add notification manually
@@ -195,29 +302,51 @@ export const NotificationProvider = ({ children }) => {
     return notifications.filter(n => !n.read);
   }, [notifications]);
 
+  // Get notifications by priority
+  const getNotificationsByPriority = useCallback((priority) => {
+    return notifications.filter(n => n.priority === priority);
+  }, [notifications]);
+
   // Send notification via WebSocket
-  const sendNotification = useCallback((notification, targetUserId = null) => {
-    if (ws && isConnected) {
-      ws.send(JSON.stringify({
+  const sendNotification = useCallback((notification, targetUserId = null, targetRole = null) => {
+    if (wsRef.current && isConnected) {
+      wsRef.current.send(JSON.stringify({
         type: 'notification',
-        target: targetUserId,
-        notification
+        targetUserId,
+        targetRole,
+        notification: {
+          ...notification,
+          timestamp: new Date().toISOString()
+        }
       }));
     } else {
       console.warn('WebSocket not connected');
       // Fallback to local notification
       handleIncomingNotification(notification);
     }
-  }, [ws, isConnected, handleIncomingNotification]);
+  }, [isConnected, handleIncomingNotification]);
+
+  // Update preferences
+  const updatePreferences = useCallback((newPreferences) => {
+    setPreferences(prev => ({
+      ...prev,
+      ...newPreferences
+    }));
+  }, []);
 
   // Complaint-specific notifications
   const notifyComplaintUpdate = useCallback((complaintId, status, message) => {
     const notification = {
       type: NOTIFICATION_TYPES.COMPLAINT_UPDATE,
-      priority: NOTIFICATION_PRIORITY.MEDIUM,
+      priority: status === 'escalated' ? NOTIFICATION_PRIORITY.HIGH : NOTIFICATION_PRIORITY.MEDIUM,
       title: 'Complaint Updated',
       message: message || `Your complaint #${complaintId} status changed to ${status}`,
-      data: { complaintId, status }
+      data: { complaintId, status },
+      link: `/student/complaints/${complaintId}`,
+      actionable: true,
+      actions: [
+        { label: 'View Details', action: 'view', link: `/student/complaints/${complaintId}` }
+      ]
     };
     addNotification(notification);
   }, [addNotification]);
@@ -228,7 +357,12 @@ export const NotificationProvider = ({ children }) => {
       priority: NOTIFICATION_PRIORITY.HIGH,
       title: 'New Assignment',
       message: `Complaint #${complaintId} has been assigned to you`,
-      data: { complaintId, staffName }
+      data: { complaintId, staffName },
+      link: `/staff/complaints/${complaintId}`,
+      actionable: true,
+      actions: [
+        { label: 'View Complaint', action: 'view', link: `/staff/complaints/${complaintId}` }
+      ]
     };
     addNotification(notification);
   }, [addNotification]);
@@ -239,16 +373,57 @@ export const NotificationProvider = ({ children }) => {
       priority: NOTIFICATION_PRIORITY.HIGH,
       title: 'New Complaint Filed',
       message: `New complaint #${complaintId} filed by ${studentName}`,
-      data: { complaintId, studentName }
+      data: { complaintId, studentName },
+      link: `/admin/complaints/${complaintId}`,
+      actionable: true,
+      actions: [
+        { label: 'Review', action: 'view', link: `/admin/complaints/${complaintId}` }
+      ]
     };
     addNotification(notification);
   }, [addNotification]);
 
+  const notifyEscalation = useCallback((complaintId, reason) => {
+    const notification = {
+      type: NOTIFICATION_TYPES.ESCALATION,
+      priority: NOTIFICATION_PRIORITY.URGENT,
+      title: 'Complaint Escalated',
+      message: `Complaint #${complaintId} has been escalated: ${reason}`,
+      data: { complaintId, reason },
+      link: `/admin/complaints/${complaintId}`,
+      actionable: true,
+      actions: [
+        { label: 'Review Escalation', action: 'view', link: `/admin/complaints/${complaintId}` }
+      ]
+    };
+    addNotification(notification);
+  }, [addNotification]);
+
+  const notifyResolution = useCallback((complaintId, resolution) => {
+    const notification = {
+      type: NOTIFICATION_TYPES.RESOLUTION,
+      priority: NOTIFICATION_PRIORITY.MEDIUM,
+      title: 'Complaint Resolved',
+      message: `Complaint #${complaintId} has been resolved. Please provide feedback.`,
+      data: { complaintId, resolution },
+      link: `/student/complaints/${complaintId}`,
+      actionable: true,
+      actions: [
+        { label: 'View Resolution', action: 'view', link: `/student/complaints/${complaintId}` },
+        { label: 'Provide Feedback', action: 'feedback', link: `/student/complaints/${complaintId}/feedback` }
+      ]
+    };
+    addNotification(notification);
+  }, [addNotification]);
+
+  // Context value
   const value = {
     // State
     notifications,
     unreadCount,
     isConnected,
+    connectionError,
+    preferences,
     
     // Core functions
     addNotification,
@@ -261,11 +436,18 @@ export const NotificationProvider = ({ children }) => {
     // Getters
     getNotificationsByType,
     getUnreadNotifications,
+    getNotificationsByPriority,
     
     // Complaint-specific
     notifyComplaintUpdate,
     notifyNewAssignment,
     notifyNewComplaint,
+    notifyEscalation,
+    notifyResolution,
+    
+    // Preferences
+    updatePreferences,
+    requestNotificationPermission,
     
     // Connection status
     isConnected
@@ -276,13 +458,4 @@ export const NotificationProvider = ({ children }) => {
       {children}
     </NotificationContext.Provider>
   );
-};
-
-// Custom hook for using notification context
-export const useNotifications = () => {
-  const context = useContext(NotificationContext);
-  if (!context) {
-    throw new Error('useNotifications must be used within NotificationProvider');
-  }
-  return context;
 };
