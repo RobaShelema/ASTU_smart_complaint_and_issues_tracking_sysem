@@ -154,21 +154,18 @@ class AuthService {
   // Handle API errors
   handleError(error) {
     if (error.response) {
-      // Server responded with error
       return {
         status: error.response.status,
         message: error.response.data.message || 'An error occurred',
         errors: error.response.data.errors || {}
       };
     } else if (error.request) {
-      // Request made but no response
       return {
         status: 503,
         message: 'Unable to connect to server',
         errors: {}
       };
     } else {
-      // Something else happened
       return {
         status: 500,
         message: error.message || 'An unexpected error occurred',
@@ -178,4 +175,5 @@ class AuthService {
   }
 }
 
-export default new AuthService();
+const authService = new AuthService();
+export default authService;

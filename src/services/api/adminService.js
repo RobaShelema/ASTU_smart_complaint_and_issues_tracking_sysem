@@ -334,6 +334,19 @@ class AdminService {
     }
   }
 
+  // Bulk complaint action
+  async bulkComplaintAction(complaintIds, action) {
+    try {
+      const response = await api.post('/admin/complaints/bulk', {
+        complaint_ids: complaintIds,
+        action
+      });
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   handleError(error) {
     if (error.response) {
       return {
@@ -350,4 +363,5 @@ class AdminService {
   }
 }
 
-export default new AdminService();
+const adminService = new AdminService();
+export default adminService;

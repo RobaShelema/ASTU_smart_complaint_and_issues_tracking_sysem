@@ -197,4 +197,5 @@ class ComplaintService {
   }
 }
 
-export default new ComplaintService();
+const complaintService = new ComplaintService();
+export default complaintService;
