@@ -1,8 +1,10 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 import { useNotifications } from '../../context/NotificationContext';
 import NotificationBell from '../feedback/NotificationBell';
+import MobileMenu from '../layout/MobileMenu';
 import { 
   Menu, 
   User, 
@@ -10,25 +12,27 @@ import {
   Settings, 
   HelpCircle,
   ChevronDown,
-  Bell
+  Sun,
+  Moon,
+  Monitor
 } from 'lucide-react';
 
-const Navbar = ({ onMenuClick }) => {
+const Navbar = () => {
   const { user, logout } = useAuth();
+  const { theme, toggleTheme, effectiveTheme } = useTheme();
   const { unreadCount } = useNotifications();
   const navigate = useNavigate();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const profileRef = useRef(null);
+  const [isScrolled, setIsScrolled] = useState(false);
 
-  // Close profile dropdown when clicking outside
+  // Handle scroll effect
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (profileRef.current && !profileRef.current.contains(event.target)) {
-        setIsProfileOpen(false);
-      }
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const handleLogout = async () => {
@@ -45,112 +49,186 @@ const Navbar = ({ onMenuClick }) => {
       .slice(0, 2) || 'U';
   };
 
-  const getRoleColor = (role) => {
-    switch(role) {
-      case 'admin': return 'bg-purple-100 text-purple-800';
-      case 'staff': return 'bg-green-100 text-green-800';
-      default: return 'bg-blue-100 text-blue-800';
-    }
+  const getThemeIcon = () => {
+    if (effectiveTheme === 'dark') return <Moon className="h-5 w-5" />;
+    if (effectiveTheme === 'light') return <Sun className="h-5 w-5" />;
+    return <Monitor className="h-5 w-5" />;
   };
 
-  return (
-    <nav className="bg-white shadow-sm border-b border-gray-200 fixed w-full z-10">
-      <div className="px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
-          {/* Left section */}
-          <div className="flex items-center">
-            {/* Mobile menu button */}
-            <button
-              onClick={onMenuClick}
-              className="md:hidden p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-100 focus:outline-none"
-            >
-              <Menu className="h-6 w-6" />
-            </button>
+  const navLinks = user ? [
+    { to: `/${user.role}/dashboard`, label: 'Dashboard' },
+    ...(user.role === 'student' ? [
+      { to: '/student/new-complaint', label: 'New Complaint' },
+      { to: '/student/complaints', label: 'My Complaints' },
+    ] : []),
+    ...(user.role === 'staff' ? [
+      { to: '/staff/assigned', label: 'Assigned' },
+    ] : []),
+    ...(user.role === 'admin' ? [
+      { to: '/admin/complaints', label: 'Complaints' },
+      { to: '/admin/users', label: 'Users' },
+      { to: '/admin/analytics', label: 'Analytics' },
+    ] : []),
+  ] : [];
 
-            {/* Logo */}
-            <Link to="/" className="flex items-center ml-2 md:ml-0">
-              <img 
-                src="/astu-logo.png" 
-                alt="ASTU" 
-                className="h-8 w-8"
-                onError={(e) => {
-                  e.target.onerror = null;
-                  e.target.src = 'https://via.placeholder.com/32?text=ASTU';
-                }}
-              />
-              <span className="ml-2 font-semibold text-gray-800 hidden sm:block">
-                ASTU Complaint System
-              </span>
-            </Link>
+  return (
+    <nav className={`
+      fixed top-0 w-full z-50 transition-all duration-300
+      ${isScrolled 
+        ? 'bg-[rgb(var(--bg-primary))] bg-opacity-90 backdrop-blur-lg shadow-soft' 
+        : 'bg-[rgb(var(--bg-primary))]'
+      }
+    `}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2">
+            <div className="gradient-primary h-8 w-8 rounded-lg flex items-center justify-center text-white font-bold">
+              A
+            </div>
+            <span className="font-bold text-[rgb(var(--text-primary))] hidden sm:block">
+              ASTU Complaint System
+            </span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden lg:flex items-center space-x-1">
+            {navLinks.map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="nav-link nav-link-inactive"
+              >
+                {link.label}
+              </Link>
+            ))}
           </div>
 
-          {/* Right section */}
-          <div className="flex items-center space-x-4">
-            {/* Notifications */}
-            <NotificationBell />
-
-            {/* Help */}
-            <button className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-full">
-              <HelpCircle className="h-5 w-5" />
+          {/* Right Section */}
+          <div className="flex items-center space-x-2">
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors"
+              aria-label="Toggle theme"
+            >
+              {getThemeIcon()}
             </button>
 
-            {/* Profile Dropdown */}
-            <div className="relative" ref={profileRef}>
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="flex items-center space-x-2 focus:outline-none"
-              >
-                <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center text-white font-medium text-sm">
-                  {getInitials(user?.name)}
-                </div>
-                <div className="hidden md:block text-left">
-                  <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                  <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-                </div>
-                <ChevronDown className="h-4 w-4 text-gray-500" />
-              </button>
+            {user ? (
+              <>
+                {/* Notifications */}
+                <NotificationBell />
 
-              {/* Dropdown Menu */}
-              {isProfileOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-1 border border-gray-200">
-                  <div className="px-4 py-2 border-b border-gray-100 md:hidden">
-                    <p className="text-sm font-medium text-gray-700">{user?.name}</p>
-                    <p className="text-xs text-gray-500 capitalize">{user?.role}</p>
-                  </div>
-                  
-                  <Link
-                    to={`/${user?.role}/profile`}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    Profile
-                  </Link>
-                  
-                  <Link
-                    to={`/${user?.role}/settings`}
-                    className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
-                    onClick={() => setIsProfileOpen(false)}
-                  >
-                    <Settings className="h-4 w-4 mr-2" />
-                    Settings
-                  </Link>
-                  
+                {/* Profile Dropdown - Desktop */}
+                <div className="relative hidden lg:block">
                   <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="flex items-center space-x-2 p-2 rounded-lg hover:bg-[rgb(var(--bg-secondary))] transition-colors"
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Logout
+                    <div className="h-8 w-8 rounded-full gradient-primary flex items-center justify-center text-white font-medium">
+                      {getInitials(user.name)}
+                    </div>
+                    <ChevronDown className="h-4 w-4" />
                   </button>
-                </div>
-              )}
-            </div>
 
-            {/* Role Badge (Mobile) */}
-            <span className={`md:hidden px-2 py-1 text-xs font-medium rounded-full ${getRoleColor(user?.role)}`}>
-              {user?.role}
-            </span>
+                  {isProfileOpen && (
+                    <div className="dropdown right-0 mt-2">
+                      <Link
+                        to={`/${user.role}/profile`}
+                        className="dropdown-item"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </Link>
+                      <Link
+                        to={`/${user.role}/settings`}
+                        className="dropdown-item"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="dropdown-item w-full text-left text-[rgb(var(--color-danger))]"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Mobile Menu */}
+                <MobileMenu>
+                  <div className="space-y-4">
+                    {/* User Info */}
+                    <div className="flex items-center space-x-3 p-3 bg-[rgb(var(--bg-secondary))] rounded-lg">
+                      <div className="h-10 w-10 rounded-full gradient-primary flex items-center justify-center text-white font-medium">
+                        {getInitials(user.name)}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{user.name}</p>
+                        <p className="text-xs text-[rgb(var(--text-secondary))] capitalize">{user.role}</p>
+                      </div>
+                    </div>
+
+                    {/* Navigation Links */}
+                    <div className="space-y-1">
+                      {navLinks.map((link) => (
+                        <Link
+                          key={link.to}
+                          to={link.to}
+                          className="nav-link nav-link-inactive w-full"
+                        >
+                          {link.label}
+                        </Link>
+                      ))}
+                    </div>
+
+                    {/* Actions */}
+                    <div className="pt-4 border-t border-[rgb(var(--border-color))] space-y-1">
+                      <Link to={`/${user.role}/profile`} className="dropdown-item">
+                        <User className="h-4 w-4 mr-2" />
+                        Profile
+                      </Link>
+                      <Link to={`/${user.role}/settings`} className="dropdown-item">
+                        <Settings className="h-4 w-4 mr-2" />
+                        Settings
+                      </Link>
+                      <Link to="/help" className="dropdown-item">
+                        <HelpCircle className="h-4 w-4 mr-2" />
+                        Help
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="dropdown-item w-full text-left text-[rgb(var(--color-danger))]"
+                      >
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Logout
+                      </button>
+                    </div>
+                  </div>
+                </MobileMenu>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Link
+                  to="/login"
+                  className="btn-ghost"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="btn-primary"
+                >
+                  Register
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
