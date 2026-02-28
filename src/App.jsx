@@ -16,7 +16,7 @@ import PrivateRoute from './routes/PrivateRoute';
 import PublicRoute from './routes/PublicRoute';
 
 // Pages
-import LandingPage from './pages/LandingPage'; // Add this import
+import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
 import ForgotPassword from './pages/auth/ForgotPassword';
@@ -75,14 +75,28 @@ function App() {
                     background: '#363636',
                     color: '#fff',
                   },
+                  success: {
+                    duration: 3000,
+                    icon: '✅',
+                    style: {
+                      background: '#10B981',
+                    },
+                  },
+                  error: {
+                    duration: 4000,
+                    icon: '❌',
+                    style: {
+                      background: '#EF4444',
+                    },
+                  },
                 }}
               />
 
               <Routes>
-                {/* Public Landing Page - THIS IS THE KEY FIX */}
+                {/* Public Landing Page */}
                 <Route path="/" element={<LandingPage />} />
 
-                {/* Public Routes */}
+                {/* Auth Routes */}
                 <Route element={<PublicRoute />}>
                   <Route element={<AuthLayout />}>
                     <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -133,11 +147,11 @@ function App() {
                 <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
                 <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
                 
-                {/* Catch all - redirect to 404 */}
+                {/* Catch all */}
                 <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
               </Routes>
 
-              {/* Global Chatbot Component */}
+              {/* Global Chatbot */}
               <Chatbot />
             </ChatbotProvider>
           </NotificationProvider>

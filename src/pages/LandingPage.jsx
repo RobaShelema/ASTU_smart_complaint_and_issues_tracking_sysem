@@ -22,7 +22,9 @@ const LandingPage = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
-              <img src="/astu-logo.png" alt="ASTU" className="h-8 w-8" />
+              <div className="h-8 w-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold">
+                A
+              </div>
               <span className="ml-2 font-bold text-gray-800">ASTU Complaint System</span>
             </div>
             <div className="flex items-center space-x-4">
@@ -31,7 +33,7 @@ const LandingPage = () => {
               </Link>
               <Link 
                 to="/register" 
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
               >
                 Get Started
               </Link>
@@ -54,13 +56,13 @@ const LandingPage = () => {
             <div className="flex justify-center space-x-4">
               <Link
                 to="/register"
-                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center"
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center transition-colors"
               >
                 Get Started <ArrowRight className="ml-2 h-5 w-5" />
               </Link>
               <Link
                 to="/login"
-                className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50"
+                className="border border-gray-300 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
               >
                 Sign In
               </Link>
@@ -69,11 +71,9 @@ const LandingPage = () => {
 
           {/* Dashboard Preview */}
           <div className="mt-16 bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-200">
-            <img 
-              src="/api/placeholder/1200/600" 
-              alt="Dashboard Preview" 
-              className="w-full"
-            />
+            <div className="h-64 bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
+              <p className="text-white text-xl">Dashboard Preview</p>
+            </div>
           </div>
         </div>
       </div>
@@ -87,7 +87,8 @@ const LandingPage = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 1 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <MessageCircle className="h-6 w-6 text-blue-600" />
               </div>
@@ -95,7 +96,8 @@ const LandingPage = () => {
               <p className="text-gray-600">Submit complaints with category, priority, and attachments. Auto-generated ticket ID for easy tracking.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 2 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-green-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <CheckCircle className="h-6 w-6 text-green-600" />
               </div>
@@ -103,7 +105,8 @@ const LandingPage = () => {
               <p className="text-gray-600">Track complaint status from submission to resolution with color-coded status indicators.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 3 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-purple-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Users className="h-6 w-6 text-purple-600" />
               </div>
@@ -111,7 +114,8 @@ const LandingPage = () => {
               <p className="text-gray-600">Dedicated dashboards for Students, Staff, and Administrators with appropriate permissions.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 4 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-yellow-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <BarChart3 className="h-6 w-6 text-yellow-600" />
               </div>
@@ -119,7 +123,8 @@ const LandingPage = () => {
               <p className="text-gray-600">Comprehensive analytics and exportable reports for data-driven decision making.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 5 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-red-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Clock className="h-6 w-6 text-red-600" />
               </div>
@@ -127,7 +132,8 @@ const LandingPage = () => {
               <p className="text-gray-600">24/7 intelligent chatbot to answer FAQs and guide users through the complaint process.</p>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow-md">
+            {/* Feature 6 */}
+            <div className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
               <div className="bg-indigo-100 w-12 h-12 rounded-lg flex items-center justify-center mb-4">
                 <Shield className="h-6 w-6 text-indigo-600" />
               </div>
@@ -219,7 +225,7 @@ const LandingPage = () => {
           </p>
           <Link
             to="/register"
-            className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 inline-flex items-center"
+            className="bg-white text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 inline-flex items-center transition-colors"
           >
             Create Free Account <ArrowRight className="ml-2 h-5 w-5" />
           </Link>
