@@ -28,6 +28,13 @@ export const AuthProvider = ({ children }) => {
     authService.logout();
     setUser(null);
   };
+  // Add these methods to your existing AuthContext
+
+
+  const updateUser = (userData) => {
+    setUser(prev => ({ ...prev, ...userData }));
+    localStorage.setItem('user', JSON.stringify({ ...user, ...userData }));
+  };
 
   const value = useMemo(
     () => ({
