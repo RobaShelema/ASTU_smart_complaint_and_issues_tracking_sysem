@@ -1,7 +1,13 @@
 import React from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { AppProviders } from './context/AppProviders';
+
+// Context Providers
+import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
+import { ChatbotProvider } from './context/ChatbotContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { SettingsProvider } from './context/SettingsContext';
 
 // Layout Components
 import DashboardLayout from './components/layout/DashboardLayout';
@@ -45,6 +51,7 @@ import ManageComplaints from './pages/admin/ManageComplaints';
 // Error Pages
 import Unauthorized from './pages/errors/Unauthorized';
 import NotFound from './components/common/NotFound';
+import RouteErrorHandler from './components/common/RouteErrorHandler';
 
 // Global Components
 import Chatbot from './components/chatbot/Chatbot';
@@ -56,7 +63,29 @@ import { ROUTES } from './routes/routeConfig';
 // Styles
 import './index.css';
 
-function AppContent() {
+// Combined Providers Component
+const AppProviders = ({ children }) => {
+  return (
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <ThemeProvider>
+            <SettingsProvider>
+              <NotificationProvider>
+                <ChatbotProvider>
+                  {children}
+                </ChatbotProvider>
+              </NotificationProvider>
+            </SettingsProvider>
+          </ThemeProvider>
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
+  );
+};
+
+// Main App Content with Routes
+const AppContent = () => {
   return (
     <>
       <Toaster 
@@ -66,6 +95,24 @@ function AppContent() {
           style: {
             background: '#363636',
             color: '#fff',
+          },
+          success: {
+            duration: 3000,
+            icon: '✅',
+            style: {
+              background: '#10B981',
+            },
+          },
+          error: {
+            duration: 4000,
+            icon: '❌',
+            style: {
+              background: '#EF4444',
+            },
+          },
+          loading: {
+            duration: 5000,
+            icon: '⏳',
           },
         }}
       />
@@ -87,37 +134,170 @@ function AppContent() {
         {/* Student Routes */}
         <Route element={<PrivateRoute allowedRoles={['student']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path={ROUTES.STUDENT_DASHBOARD} element={<StudentDashboard />} />
-            <Route path={ROUTES.STUDENT_NEW_COMPLAINT} element={<NewComplaint />} />
-            <Route path={ROUTES.STUDENT_MY_COMPLAINTS} element={<MyComplaints />} />
-            <Route path={ROUTES.STUDENT_COMPLAINT_DETAIL} element={<ComplaintDetails />} />
-            <Route path={ROUTES.STUDENT_PROFILE} element={<StudentProfile />} />
+            <Route 
+              path={ROUTES.STUDENT_DASHBOARD} 
+              element={
+                <ErrorBoundary>
+                  <StudentDashboard />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STUDENT_NEW_COMPLAINT} 
+              element={
+                <ErrorBoundary>
+                  <NewComplaint />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STUDENT_MY_COMPLAINTS} 
+              element={
+                <ErrorBoundary>
+                  <MyComplaints />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STUDENT_COMPLAINT_DETAIL} 
+              element={
+                <ErrorBoundary>
+                  <ComplaintDetails />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STUDENT_PROFILE} 
+              element={
+                <ErrorBoundary>
+                  <StudentProfile />
+                </ErrorBoundary>
+              } 
+            />
           </Route>
         </Route>
 
         {/* Staff Routes */}
         <Route element={<PrivateRoute allowedRoles={['staff']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path={ROUTES.STAFF_DASHBOARD} element={<StaffDashboard />} />
-            <Route path={ROUTES.STAFF_ASSIGNED} element={<AssignedComplaints />} />
-            <Route path={ROUTES.STAFF_COMPLAINT_DETAIL} element={<ComplaintResolution />} />
-            <Route path={ROUTES.STAFF_RESOLVE} element={<ComplaintResolution />} />
-            <Route path={ROUTES.STAFF_PROFILE} element={<StaffProfile />} />
+            <Route 
+              path={ROUTES.STAFF_DASHBOARD} 
+              element={
+                <ErrorBoundary>
+                  <StaffDashboard />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STAFF_ASSIGNED} 
+              element={
+                <ErrorBoundary>
+                  <AssignedComplaints />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STAFF_COMPLAINT_DETAIL} 
+              element={
+                <ErrorBoundary>
+                  <ComplaintResolution />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STAFF_RESOLVE} 
+              element={
+                <ErrorBoundary>
+                  <ComplaintResolution />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.STAFF_PROFILE} 
+              element={
+                <ErrorBoundary>
+                  <StaffProfile />
+                </ErrorBoundary>
+              } 
+            />
           </Route>
         </Route>
 
         {/* Admin Routes */}
         <Route element={<PrivateRoute allowedRoles={['admin']} />}>
           <Route element={<DashboardLayout />}>
-            <Route path={ROUTES.ADMIN_DASHBOARD} element={<AdminDashboard />} />
-            <Route path={ROUTES.ADMIN_COMPLAINTS} element={<ManageComplaints />} />
-            <Route path={ROUTES.ADMIN_USERS} element={<ManageUsers />} />
-            <Route path={ROUTES.ADMIN_CATEGORIES} element={<ManageCategories />} />
-            <Route path={ROUTES.ADMIN_DEPARTMENTS} element={<ManageDepartments />} />
-            <Route path={ROUTES.ADMIN_ANALYTICS} element={<Analytics />} />
-            <Route path={ROUTES.ADMIN_REPORTS} element={<Reports />} />
-            <Route path={ROUTES.ADMIN_LOGS} element={<SystemLogs />} />
-            <Route path={ROUTES.ADMIN_SETTINGS} element={<Settings />} />
+            <Route 
+              path={ROUTES.ADMIN_DASHBOARD} 
+              element={
+                <ErrorBoundary>
+                  <AdminDashboard />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_COMPLAINTS} 
+              element={
+                <ErrorBoundary>
+                  <ManageComplaints />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_USERS} 
+              element={
+                <ErrorBoundary>
+                  <ManageUsers />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_CATEGORIES} 
+              element={
+                <ErrorBoundary>
+                  <ManageCategories />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_DEPARTMENTS} 
+              element={
+                <ErrorBoundary>
+                  <ManageDepartments />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_ANALYTICS} 
+              element={
+                <ErrorBoundary>
+                  <Analytics />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_REPORTS} 
+              element={
+                <ErrorBoundary>
+                  <Reports />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_LOGS} 
+              element={
+                <ErrorBoundary>
+                  <SystemLogs />
+                </ErrorBoundary>
+              } 
+            />
+            <Route 
+              path={ROUTES.ADMIN_SETTINGS} 
+              element={
+                <ErrorBoundary>
+                  <Settings />
+                </ErrorBoundary>
+              } 
+            />
           </Route>
         </Route>
 
@@ -125,23 +305,22 @@ function AppContent() {
         <Route path={ROUTES.UNAUTHORIZED} element={<Unauthorized />} />
         <Route path={ROUTES.NOT_FOUND} element={<NotFound />} />
         
-        {/* Catch all */}
-        <Route path="*" element={<Navigate to={ROUTES.NOT_FOUND} replace />} />
+        {/* Catch all - redirect to 404 */}
+        <Route path="*" element={<RouteErrorHandler />} />
       </Routes>
 
-      {/* Global Chatbot */}
+      {/* Global Chatbot - appears on all pages */}
       <Chatbot />
     </>
   );
-}
+};
 
+// Main App Component
 function App() {
   return (
-    <ErrorBoundary>
-      <AppProviders>
-        <AppContent />
-      </AppProviders>
-    </ErrorBoundary>
+    <AppProviders>
+      <AppContent />
+    </AppProviders>
   );
 }
 
