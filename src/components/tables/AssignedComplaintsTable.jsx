@@ -52,8 +52,8 @@ const AssignedComplaintsTable = ({
     let bValue = b[sortField];
 
     if (sortField === 'createdAt' || sortField === 'deadline') {
-      aValue = new Date(aValue);
-      bValue = new Date(bValue);
+      aValue = aValue ? new Date(aValue).getTime() || 0 : 0;
+      bValue = bValue ? new Date(bValue).getTime() || 0 : 0;
     }
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -79,15 +79,30 @@ const AssignedComplaintsTable = ({
     }
   };
 
+  const isValidDate = (d) => d instanceof Date && !isNaN(d);
+
   const getDeadlineStatus = (deadline) => {
-    const now = new Date();
+    if (!deadline) return { text: 'No deadline', color: 'text-gray-400' };
     const dueDate = new Date(deadline);
+    if (!isValidDate(dueDate)) return { text: 'No deadline', color: 'text-gray-400' };
+    const now = new Date();
     const diffDays = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
     
     if (diffDays < 0) return { text: 'Overdue', color: 'text-red-600' };
     if (diffDays === 0) return { text: 'Today', color: 'text-orange-600' };
     if (diffDays <= 2) return { text: `${diffDays} days left`, color: 'text-yellow-600' };
     return { text: `${diffDays} days left`, color: 'text-green-600' };
+  };
+
+  const safeFormatDistance = (dateStr) => {
+    if (!dateStr) return '—';
+    const d = new Date(dateStr);
+    if (!isValidDate(d)) return '—';
+    try {
+      return formatDistanceToNow(d, { addSuffix: true });
+    } catch {
+      return '—';
+    }
   };
 
   if (loading) {
@@ -225,13 +240,15 @@ const AssignedComplaintsTable = ({
                           <span className={deadlineStatus.color}>
                             {deadlineStatus.text}
                           </span>
-                          <div className="text-xs text-gray-500">
-                            {new Date(complaint.deadline).toLocaleDateString()}
-                          </div>
+                          {complaint.deadline && isValidDate(new Date(complaint.deadline)) && (
+                            <div className="text-xs text-gray-500">
+                              {new Date(complaint.deadline).toLocaleDateString()}
+                            </div>
+                          )}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-gray-500">
-                        {formatDistanceToNow(new Date(complaint.assignedAt), { addSuffix: true })}
+                        {safeFormatDistance(complaint.assignedAt)}
                       </td>
                       <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
                         <Link

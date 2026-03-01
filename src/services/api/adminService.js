@@ -1,6 +1,21 @@
 import { api } from './axiosConfig';
 
 class AdminService {
+  // ==================== COMPLAINT MANAGEMENT ====================
+
+  // Get all complaints (with filters)
+  async getAllComplaints(filters = {}) {
+    try {
+      const queryParams = new URLSearchParams(
+        Object.fromEntries(Object.entries(filters).filter(([_, v]) => v && v !== 'all' && (!Array.isArray(v) || v.length > 0)))
+      ).toString();
+      const response = await api.get(`/admin/complaints?${queryParams}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
   // ==================== USER MANAGEMENT ====================
   
   // Get all users
@@ -8,7 +23,7 @@ class AdminService {
     try {
       const queryParams = new URLSearchParams(filters).toString();
       const response = await api.get(`/admin/users?${queryParams}`);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -73,7 +88,7 @@ class AdminService {
   async getDepartments() {
     try {
       const response = await api.get('/admin/departments');
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -115,7 +130,7 @@ class AdminService {
   async getCategories() {
     try {
       const response = await api.get('/admin/categories');
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -255,7 +270,7 @@ class AdminService {
     try {
       const queryParams = new URLSearchParams(filters).toString();
       const response = await api.get(`/admin/system/logs?${queryParams}`);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -265,6 +280,15 @@ class AdminService {
   async getSystemHealth() {
     try {
       const response = await api.get('/admin/system/health');
+      return response.data;
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  async updateSettings(settingsData) {
+    try {
+      const response = await api.put('/admin/settings', settingsData);
       return response.data;
     } catch (error) {
       throw this.handleError(error);
@@ -295,7 +319,7 @@ class AdminService {
   async getRecentComplaints(limit = 10) {
     try {
       const response = await api.get(`/admin/complaints/recent?limit=${limit}`);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -305,7 +329,7 @@ class AdminService {
   async getRecentUsers(limit = 5) {
     try {
       const response = await api.get(`/admin/users/recent?limit=${limit}`);
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }

@@ -174,17 +174,17 @@ const StaffDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-green-600 to-green-800 rounded-lg shadow-lg p-6 text-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-green-600 to-green-800 rounded-xl shadow-lg p-4 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">
-              Welcome back, {user?.name?.split(' ')[0]}! 👨‍🔧
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Welcome back, {user?.name?.split(' ')[0]}!
             </h1>
-            <p className="text-green-100 mt-1">
+            <p className="text-green-100 mt-1 text-sm sm:text-base">
               Manage and resolve assigned complaints efficiently
             </p>
           </div>
-          <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2">
+          <div className="bg-white/20 rounded-lg px-4 py-2 text-center sm:text-right">
             <p className="text-sm opacity-90">Your Performance</p>
             <p className="text-2xl font-bold">{resolutionRate}%</p>
           </div>
@@ -192,7 +192,7 @@ const StaffDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <StatsCard
           title="Total Assigned"
           value={stats.totalAssigned}
@@ -226,9 +226,9 @@ const StaffDashboard = () => {
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Performance Chart */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Weekly Performance</h2>
           <ResponsiveContainer width="100%" height={300}>
             <AreaChart data={performanceData}>
@@ -284,9 +284,9 @@ const StaffDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Assigned Complaints Table */}
-        <div className="lg:col-span-2 bg-white rounded-lg shadow">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow overflow-hidden">
           <div className="p-4 border-b border-gray-200 flex items-center justify-between">
             <h2 className="text-lg font-semibold text-gray-800">Assigned Complaints</h2>
             <Link 

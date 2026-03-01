@@ -448,9 +448,6 @@ export const NotificationProvider = ({ children }) => {
     // Preferences
     updatePreferences,
     requestNotificationPermission,
-    
-    // Connection status
-    isConnected
   };
 
   return (

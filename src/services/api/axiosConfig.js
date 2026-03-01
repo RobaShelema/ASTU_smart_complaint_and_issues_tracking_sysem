@@ -137,26 +137,144 @@ axiosInstance.interceptors.response.use(
   }
 );
 
-// Helper methods for common request types
+// ============ MOCK DATA ============
+
+const MOCK_COMPLAINTS = [
+  { id: 'CMP001', title: 'Broken AC in Lab 101', description: 'The air conditioner in computer lab 101 is not working.', category: 'Facilities', status: 'pending', priority: 'high', department: 'Maintenance', createdAt: '2026-02-25T08:00:00Z', deadline: '2026-03-05T08:00:00Z', assignedAt: '2026-02-25T10:00:00Z', studentId: 'mock-student', studentName: 'Abebe Kebede', assignedTo: 'mock-staff' },
+  { id: 'CMP002', title: 'Internet connectivity issue', description: 'Wi-Fi keeps disconnecting in the library.', category: 'IT', status: 'in_progress', priority: 'medium', department: 'IT', createdAt: '2026-02-26T10:00:00Z', deadline: '2026-03-06T10:00:00Z', assignedAt: '2026-02-26T12:00:00Z', studentId: 'mock-student', studentName: 'Sara Hailu', assignedTo: 'mock-staff' },
+  { id: 'CMP003', title: 'Projector not working in Room 205', description: 'The projector has a burnt bulb.', category: 'Equipment', status: 'resolved', priority: 'low', department: 'IT', createdAt: '2026-02-20T09:00:00Z', deadline: '2026-02-28T09:00:00Z', assignedAt: '2026-02-20T11:00:00Z', resolvedAt: '2026-02-27T15:00:00Z', studentId: 'mock-student', studentName: 'Dawit Alemu', assignedTo: 'mock-staff' },
+  { id: 'CMP004', title: 'Water leakage in dormitory', description: 'Water is leaking from the ceiling in Block C Room 312.', category: 'Facilities', status: 'pending', priority: 'urgent', department: 'Maintenance', createdAt: '2026-02-28T14:00:00Z', deadline: '2026-03-02T14:00:00Z', assignedAt: '2026-02-28T15:00:00Z', studentId: 'mock-student', studentName: 'Hana Girma', assignedTo: 'mock-staff' },
+  { id: 'CMP005', title: 'Cafeteria hygiene complaint', description: 'Food serving area is not properly cleaned.', category: 'Cafeteria', status: 'closed', priority: 'medium', department: 'Student Affairs', createdAt: '2026-02-15T11:00:00Z', deadline: '2026-02-22T11:00:00Z', assignedAt: '2026-02-15T14:00:00Z', resolvedAt: '2026-02-21T09:00:00Z', studentId: 'mock-student', studentName: 'Liya Teshome', assignedTo: 'mock-staff' },
+  { id: 'CMP006', title: 'Missing library books', description: 'Several reference books missing from shelf B3.', category: 'Library', status: 'in_progress', priority: 'low', department: 'Library', createdAt: '2026-02-27T13:00:00Z', deadline: '2026-03-07T13:00:00Z', assignedAt: '2026-02-27T16:00:00Z', studentId: 'mock-student', studentName: 'Yonas Bekele', assignedTo: 'mock-staff' },
+];
+
+const MOCK_USERS = [
+  { id: 'u1', name: 'Abebe Kebede', email: 'abebe@astu.edu.et', role: 'student', department: 'Computer Science', joinedDate: '2025-09-01', status: 'active' },
+  { id: 'u2', name: 'Sara Hailu', email: 'sara@astu.edu.et', role: 'student', department: 'Engineering', joinedDate: '2025-09-01', status: 'active' },
+  { id: 'u3', name: 'Tekle Berhan', email: 'tekle@astu.edu.et', role: 'staff', department: 'IT', joinedDate: '2024-01-15', status: 'active' },
+  { id: 'u4', name: 'Meron Tadesse', email: 'meron@astu.edu.et', role: 'staff', department: 'Maintenance', joinedDate: '2024-03-10', status: 'active' },
+  { id: 'u5', name: 'Admin User', email: 'admin@astu.edu.et', role: 'admin', department: 'Administration', joinedDate: '2023-06-01', status: 'active' },
+];
+
+function getMockLoginResponse(credentials) {
+  const email = (credentials?.email || '').toLowerCase();
+  let role = 'student';
+  if (email.includes('staff@')) role = 'staff';
+  else if (email.includes('admin@')) role = 'admin';
+  const name = role.charAt(0).toUpperCase() + role.slice(1) + ' User';
+  return {
+    token: 'mock-jwt-' + Math.random().toString(36).slice(2),
+    refreshToken: 'mock-refresh-' + Math.random().toString(36).slice(2),
+    user: { id: 'mock-' + role, name, email: credentials?.email || '', role },
+  };
+}
+
+const MOCK_DEPARTMENTS = [
+  { id: 'd1', name: 'Computer Science', code: 'CS', description: 'Department of Computer Science', headOfDepartment: 'Dr. Alemayehu', email: 'cs@astu.edu.et', phone: '+251-22-111-0101', location: 'Block A', staffCount: 15, isActive: true },
+  { id: 'd2', name: 'Maintenance', code: 'MNT', description: 'Facilities maintenance department', headOfDepartment: 'Ato Bekele', email: 'maintenance@astu.edu.et', phone: '+251-22-111-0102', location: 'Block B', staffCount: 22, isActive: true },
+  { id: 'd3', name: 'IT Services', code: 'IT', description: 'Information Technology department', headOfDepartment: 'Dr. Chaltu', email: 'it@astu.edu.et', phone: '+251-22-111-0103', location: 'Block C', staffCount: 10, isActive: true },
+  { id: 'd4', name: 'Library', code: 'LIB', description: 'University Library', headOfDepartment: 'Ato Daniel', email: 'library@astu.edu.et', phone: '+251-22-111-0104', location: 'Library Building', staffCount: 8, isActive: true },
+  { id: 'd5', name: 'Student Affairs', code: 'SA', description: 'Student affairs and welfare', headOfDepartment: 'W/ro Firehiwot', email: 'studentaffairs@astu.edu.et', phone: '+251-22-111-0105', location: 'Admin Block', staffCount: 6, isActive: true },
+];
+
+const MOCK_CATEGORIES = [
+  { id: 'c1', name: 'Facilities', description: 'Building and infrastructure issues', department: 'Maintenance', priority: 'high', slaDays: 3, isActive: true, complaintCount: 35 },
+  { id: 'c2', name: 'IT & Network', description: 'Internet, computers and tech issues', department: 'IT Services', priority: 'medium', slaDays: 2, isActive: true, complaintCount: 25 },
+  { id: 'c3', name: 'Cafeteria', description: 'Food quality and hygiene', department: 'Student Affairs', priority: 'medium', slaDays: 1, isActive: true, complaintCount: 15 },
+  { id: 'c4', name: 'Library', description: 'Library resources and services', department: 'Library', priority: 'low', slaDays: 5, isActive: true, complaintCount: 12 },
+  { id: 'c5', name: 'Equipment', description: 'Lab and classroom equipment', department: 'IT Services', priority: 'high', slaDays: 2, isActive: true, complaintCount: 8 },
+  { id: 'c6', name: 'Dormitory', description: 'Student housing issues', department: 'Student Affairs', priority: 'high', slaDays: 1, isActive: true, complaintCount: 18 },
+];
+
+function getMockGetResponse(url) {
+  // Complaint endpoints
+  if (url.includes('/complaints/my') || url.includes('/complaints/student'))
+    return MOCK_COMPLAINTS;
+  if (url.includes('/complaints/assigned') || url.includes('/complaints/staff'))
+    return MOCK_COMPLAINTS.filter(c => c.status !== 'closed');
+  if (url.includes('/complaints/stats'))
+    return { total: 6, pending: 2, inProgress: 2, resolved: 1, closed: 1 };
+  if (url.includes('/complaints/recent'))
+    return MOCK_COMPLAINTS;
+
+  // Admin stats endpoints (check before broader admin patterns)
+  if (url.includes('/admin/stats/dashboard'))
+    return { totalUsers: 152, totalComplaints: 89, pendingComplaints: 23, resolvedComplaints: 54, activeStaff: 12, avgResolutionTime: 2.5, satisfactionRate: 87, escalatedCount: 3 };
+  if (url.includes('/admin/stats/trends'))
+    return [
+      { date: 'Mon', submitted: 5, resolved: 3 }, { date: 'Tue', submitted: 8, resolved: 6 },
+      { date: 'Wed', submitted: 6, resolved: 7 }, { date: 'Thu', submitted: 9, resolved: 5 },
+      { date: 'Fri', submitted: 7, resolved: 8 }, { date: 'Sat', submitted: 3, resolved: 2 },
+      { date: 'Sun', submitted: 2, resolved: 1 },
+    ];
+  if (url.includes('/admin/stats/departments'))
+    return [
+      { name: 'IT', complaints: 25 }, { name: 'Maintenance', complaints: 32 },
+      { name: 'Library', complaints: 12 }, { name: 'Cafeteria', complaints: 15 },
+      { name: 'Student Affairs', complaints: 8 },
+    ];
+  if (url.includes('/admin/stats/categories'))
+    return [
+      { name: 'Facilities', value: 35 }, { name: 'IT', value: 25 },
+      { name: 'Cafeteria', value: 15 }, { name: 'Library', value: 12 },
+      { name: 'Equipment', value: 8 }, { name: 'Other', value: 5 },
+    ];
+
+  // Admin resource endpoints
+  if (url.includes('/admin/departments'))
+    return MOCK_DEPARTMENTS;
+  if (url.includes('/admin/categories'))
+    return MOCK_CATEGORIES;
+  if (url.includes('/admin/users/recent'))
+    return MOCK_USERS;
+  if (url.includes('/admin/users'))
+    return MOCK_USERS;
+  if (url.includes('/admin/complaints'))
+    return MOCK_COMPLAINTS;
+  if (url.includes('/admin/system/logs'))
+    return [
+      { id: 'l1', action: 'User Login', user: 'admin@astu.edu.et', timestamp: '2026-03-01T08:00:00Z', level: 'info', details: 'Successful login' },
+      { id: 'l2', action: 'Complaint Created', user: 'student@astu.edu.et', timestamp: '2026-03-01T07:30:00Z', level: 'info', details: 'New complaint CMP001' },
+      { id: 'l3', action: 'User Created', user: 'admin@astu.edu.et', timestamp: '2026-02-28T15:00:00Z', level: 'info', details: 'New staff user added' },
+    ];
+  if (url.includes('/admin/system/health'))
+    return { cpu: 45, memory: 62, storage: 38, apiLatency: 120, uptime: '99.9%', status: 'healthy' };
+  if (url.includes('/admin/reports'))
+    return [];
+
+  // Generic complaint by ID (keep last)
+  if (url.includes('/complaints'))
+    return MOCK_COMPLAINTS;
+
+  return {};
+}
+
+// Mock API (used when backend is not available)
 export const api = {
-  get: (url, config = {}) => axiosInstance.get(url, config),
-  post: (url, data = {}, config = {}) => axiosInstance.post(url, data, config),
-  put: (url, data = {}, config = {}) => axiosInstance.put(url, data, config),
-  patch: (url, data = {}, config = {}) => axiosInstance.patch(url, data, config),
-  delete: (url, config = {}) => axiosInstance.delete(url, config),
-  
-  // File upload helper
-  upload: (url, formData, onProgress) => {
-    return axiosInstance.post(url, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      onUploadProgress: (progressEvent) => {
-        if (onProgress) {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-          onProgress(percentCompleted);
-        }
-      },
-    });
+  get: async (url, config = {}) => {
+    if (import.meta.env.DEV) console.log('Mock API GET:', url);
+    return { data: getMockGetResponse(url) };
   },
+  post: async (url, data = {}, config = {}) => {
+    if (import.meta.env.DEV) console.log('Mock API POST:', url, data);
+    if (url === '/auth/login' && data) return { data: getMockLoginResponse(data) };
+    if (url === '/auth/logout') return { data: { success: true } };
+    if (url.includes('/complaints') && !url.includes('/assign') && !url.includes('/resolve') && !url.includes('/comments'))
+      return { data: { id: 'CMP' + Date.now().toString().slice(-4), ...data, status: 'pending', createdAt: new Date().toISOString() } };
+    return { data: { success: true } };
+  },
+  put: async (url, data = {}, config = {}) => {
+    if (import.meta.env.DEV) console.log('Mock API PUT:', url, data);
+    return { data: { success: true, ...data } };
+  },
+  patch: async (url, data = {}, config = {}) => {
+    if (import.meta.env.DEV) console.log('Mock API PATCH:', url, data);
+    return { data: { success: true, ...data } };
+  },
+  delete: async (url, config = {}) => {
+    if (import.meta.env.DEV) console.log('Mock API DELETE:', url);
+    return { data: { success: true } };
+  }
 };
 
-export default axiosInstance;
+export default api;

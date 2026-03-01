@@ -137,19 +137,19 @@ const StudentDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Header */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-lg p-6 text-white">
-        <div className="flex items-center justify-between">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-xl shadow-lg p-4 sm:p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold">
-              Welcome back, {user?.name?.split(' ')[0]}! 👋
+            <h1 className="text-xl sm:text-2xl font-bold">
+              Welcome back, {user?.name?.split(' ')[0]}!
             </h1>
-            <p className="text-blue-100 mt-1">
+            <p className="text-blue-100 mt-1 text-sm sm:text-base">
               Track and manage your complaints from one central dashboard
             </p>
           </div>
           <button
             onClick={() => setShowComplaintForm(true)}
-            className="flex items-center space-x-2 bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors"
+            className="flex items-center justify-center gap-2 bg-white text-blue-600 px-4 py-2 rounded-lg hover:bg-blue-50 transition-colors text-sm font-medium whitespace-nowrap"
           >
             <Plus className="h-5 w-5" />
             <span>New Complaint</span>
@@ -158,7 +158,7 @@ const StudentDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <StatsCard
           title="Total Complaints"
           value={stats.total}
@@ -196,15 +196,15 @@ const StudentDashboard = () => {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Left Column - Complaints Table */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           {/* Recent Complaints */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-4 border-b border-gray-200">
-              <h2 className="text-lg font-semibold text-gray-800">Recent Complaints</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow">
+            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+              <h2 className="text-lg font-semibold text-gray-800 dark:text-gray-100">Recent Complaints</h2>
             </div>
-            <div className="p-4">
+            <div className="p-4 overflow-x-auto">
               <ComplaintTable 
                 complaints={complaints.slice(0, 5)} 
                 loading={loading}
@@ -322,9 +322,9 @@ const StudentDashboard = () => {
 
       {/* Complaint Form Modal */}
       {showComplaintForm && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-4 sm:p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-gray-800">Submit New Complaint</h2>
                 <button

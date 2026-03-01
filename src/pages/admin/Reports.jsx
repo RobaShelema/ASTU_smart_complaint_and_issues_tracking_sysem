@@ -21,7 +21,7 @@ const Reports = () => {
     start: format(new Date().setDate(1), 'yyyy-MM-dd'),
     end: format(new Date(), 'yyyy-MM-dd')
   });
-  const [format, setFormat] = useState('pdf');
+  const [reportFormat, setReportFormat] = useState('pdf');
   const [filters, setFilters] = useState({
     department: 'all',
     category: 'all',
@@ -61,7 +61,7 @@ const Reports = () => {
       await adminService.generateReport({
         type: selectedReport,
         dateRange,
-        format,
+        format: reportFormat,
         filters
       });
       toast.success('Report generated successfully');
@@ -228,8 +228,8 @@ const Reports = () => {
                 <label className="flex items-center space-x-2">
                   <input
                     type="radio"
-                    checked={format === 'pdf'}
-                    onChange={() => setFormat('pdf')}
+                    checked={reportFormat === 'pdf'}
+                    onChange={() => setReportFormat('pdf')}
                     className="h-4 w-4 text-blue-600"
                   />
                   <File className="h-4 w-4" />
@@ -238,8 +238,8 @@ const Reports = () => {
                 <label className="flex items-center space-x-2">
                   <input
                     type="radio"
-                    checked={format === 'excel'}
-                    onChange={() => setFormat('excel')}
+                    checked={reportFormat === 'excel'}
+                    onChange={() => setReportFormat('excel')}
                     className="h-4 w-4 text-blue-600"
                   />
                   <FileSpreadsheet className="h-4 w-4" />
@@ -248,8 +248,8 @@ const Reports = () => {
                 <label className="flex items-center space-x-2">
                   <input
                     type="radio"
-                    checked={format === 'csv'}
-                    onChange={() => setFormat('csv')}
+                    checked={reportFormat === 'csv'}
+                    onChange={() => setReportFormat('csv')}
                     className="h-4 w-4 text-blue-600"
                   />
                   <FileJson className="h-4 w-4" />

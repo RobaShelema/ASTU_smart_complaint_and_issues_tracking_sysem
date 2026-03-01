@@ -137,15 +137,15 @@ const AdminDashboard = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1 text-sm sm:text-base">
             Welcome back, {user?.name}. Here's what's happening with your system.
           </p>
         </div>
         
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
           {/* Date Range Selector */}
           <select
             value={dateRange}
@@ -201,7 +201,7 @@ const AdminDashboard = () => {
       )}
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <StatsCard
           title="Total Users"
           value={stats.totalUsers}
@@ -233,8 +233,8 @@ const AdminDashboard = () => {
       </div>
 
       {/* Secondary Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4">
           <p className="text-sm text-gray-600">Active Staff</p>
           <p className="text-2xl font-bold text-gray-900">{stats.activeStaff}</p>
           <p className="text-xs text-green-600 mt-1">↑ 3 new this month</p>
@@ -257,9 +257,9 @@ const AdminDashboard = () => {
       </div>
 
       {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Complaint Trends */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold text-gray-800">Complaint Trends</h2>
             <select className="text-sm border border-gray-300 rounded-lg px-2 py-1">
@@ -294,7 +294,7 @@ const AdminDashboard = () => {
         </div>
 
         {/* Department Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Complaints by Department</h2>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={departmentData}>
@@ -309,9 +309,9 @@ const AdminDashboard = () => {
       </div>
 
       {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Category Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Complaints by Category</h2>
           <ResponsiveContainer width="100%" height={250}>
             <PieChart>

@@ -130,14 +130,14 @@ export const AuthProvider = ({ children }) => {
 
         toast.success(`Welcome back, ${response.user.name}!`);
         
-        // Redirect based on role
+        // Redirect after React commits state (next tick), so PrivateRoute sees user
         const dashboardRoutes = {
           student: '/student/dashboard',
           staff: '/staff/dashboard',
           admin: '/admin/dashboard'
         };
-        
-        navigate(dashboardRoutes[response.user.role] || '/');
+        const path = dashboardRoutes[response.user.role] || '/';
+        setTimeout(() => navigate(path), 0);
         
         return response;
       }

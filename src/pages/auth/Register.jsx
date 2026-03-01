@@ -1,36 +1,40 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { registerValidation } from '../../utils/validators/authValidator';
+import {
+  User,
+  Mail,
+  Lock,
+  Phone,
+  BookOpen,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  UserPlus,
+  CreditCard,
+  CheckCircle2,
+} from 'lucide-react';
 import authService from '../../services/api/authService';
-import { User, Mail, Lock, Phone, Calendar, BookOpen, AlertCircle, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Register = () => {
   const navigate = useNavigate();
-  
-  // Form state
+
   const [formData, setFormData] = useState({
     fullName: '',
-    universityId: '',
     email: '',
-    phone: '',
-    department: '',
-    yearOfStudy: '',
     password: '',
     confirmPassword: '',
-    agreeTerms: false
+    phone: '',
+    department: '',
+    studentId: '',
   });
 
-  // UI state
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
-  const [registrationStep, setRegistrationStep] = useState(1);
-  const [passwordStrength, setPasswordStrength] = useState(0);
 
-  // Departments list
   const departments = [
     'Computer Science',
     'Software Engineering',
@@ -41,530 +45,353 @@ const Register = () => {
     'Chemical Engineering',
     'Architecture',
     'Business Administration',
-    'Economics'
+    'Economics',
   ];
 
-  // Calculate password strength
-  const calculatePasswordStrength = (password) => {
-    let strength = 0;
-    if (password.length >= 8) strength += 25;
-    if (password.match(/[a-z]+/)) strength += 25;
-    if (password.match(/[A-Z]+/)) strength += 25;
-    if (password.match(/[0-9]+/)) strength += 25;
-    return strength;
-  };
+  const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const validatePhone = (phone) => /^(\+251|0)[97]\d{8}$/.test(phone);
+  const validatePassword = (pw) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(pw);
 
-  // Handle input change
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : value
-    }));
-
-    // Calculate password strength
-    if (name === 'password') {
-      setPasswordStrength(calculatePasswordStrength(value));
-    }
-
-    // Clear error for this field
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
   };
 
-  // Handle field blur
   const handleBlur = (e) => {
     const { name } = e.target;
-    setTouchedFields(prev => ({ ...prev, [name]: true }));
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
+    validateField(name, formData[name]);
   };
 
-  // Next step
-  const handleNextStep = () => {
-    const stepFields = {
-      1: ['fullName', 'universityId', 'email', 'phone'],
-      2: ['department', 'yearOfStudy'],
-      3: ['password', 'confirmPassword', 'agreeTerms']
-    };
+  const validateField = (name, value) => {
+    let error = '';
+    switch (name) {
+      case 'fullName':
+        if (!value.trim()) error = 'Full name is required';
+        else if (value.trim().length < 3) error = 'At least 3 characters';
+        break;
+      case 'email':
+        if (!value.trim()) error = 'Email is required';
+        else if (!validateEmail(value)) error = 'Invalid email format';
+        break;
+      case 'password':
+        if (!value) error = 'Password is required';
+        else if (!validatePassword(value))
+          error = 'Min 8 chars, 1 uppercase, 1 lowercase, 1 number';
+        break;
+      case 'confirmPassword':
+        if (!value) error = 'Please confirm password';
+        else if (value !== formData.password) error = 'Passwords do not match';
+        break;
+      case 'phone':
+        if (!value.trim()) error = 'Phone is required';
+        else if (!validatePhone(value)) error = 'Use 09XXXXXXXX or +2519XXXXXXXX';
+        break;
+      case 'department':
+        if (!value) error = 'Select your department';
+        break;
+      case 'studentId':
+        if (!value.trim()) error = 'Student ID is required';
+        break;
+      default:
+        break;
+    }
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return !error;
+  };
 
-    const currentFields = stepFields[registrationStep];
-    const stepErrors = {};
-    
-    currentFields.forEach(field => {
-      if (!formData[field]) {
-        stepErrors[field] = `${field} is required`;
-      }
+  const validateForm = () => {
+    let valid = true;
+    Object.keys(formData).forEach((f) => {
+      if (!validateField(f, formData[f])) valid = false;
     });
+    return valid;
+  };
 
-    if (Object.keys(stepErrors).length > 0) {
-      setErrors(stepErrors);
-      setTouchedFields(prev => ({
-        ...prev,
-        ...currentFields.reduce((acc, field) => ({ ...acc, [field]: true }), {})
-      }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    const allTouched = {};
+    Object.keys(formData).forEach((k) => (allTouched[k] = true));
+    setTouchedFields(allTouched);
+
+    if (!validateForm()) {
+      toast.error('Please fix the errors in the form');
       return;
     }
 
-    setRegistrationStep(prev => prev + 1);
-  };
-
-  // Previous step
-  const handlePrevStep = () => {
-    setRegistrationStep(prev => prev - 1);
-  };
-
-  // Handle form submission
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validate all fields
-    const validationErrors = registerValidation(formData);
-    setErrors(validationErrors);
-    setTouchedFields({
-      fullName: true,
-      universityId: true,
-      email: true,
-      phone: true,
-      department: true,
-      yearOfStudy: true,
-      password: true,
-      confirmPassword: true,
-      agreeTerms: true
-    });
-
-    if (Object.keys(validationErrors).length === 0) {
-      setIsLoading(true);
-
-      try {
-        await authService.register({
-          name: formData.fullName,
-          universityId: formData.universityId,
-          email: formData.email,
-          phone: formData.phone,
-          department: formData.department,
-          yearOfStudy: parseInt(formData.yearOfStudy),
-          password: formData.password,
-          role: 'student'
-        });
-
-        toast.success('Registration successful! Please check your email to verify your account.');
-        
-        setTimeout(() => {
-          navigate('/login', { 
-            state: { message: 'Registration successful! Please login with your credentials.' }
-          });
-        }, 2000);
-
-      } catch (error) {
-        toast.error(error.message || 'Registration failed. Please try again.');
-        setErrors({ form: error.message });
-      } finally {
-        setIsLoading(false);
-      }
+    setIsLoading(true);
+    try {
+      const response = await authService.register({
+        name: formData.fullName,
+        email: formData.email,
+        password: formData.password,
+        password_confirmation: formData.confirmPassword,
+        phone: formData.phone,
+        department: formData.department,
+        studentId: formData.studentId,
+        role: 'student',
+      });
+      toast.success(response.message || 'Registration successful!');
+      localStorage.setItem('registeredUser', JSON.stringify(response.user));
+      setTimeout(() => {
+        navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+      }, 2000);
+    } catch (error) {
+      toast.error(error.message || 'Registration failed.');
+      setErrors((prev) => ({ ...prev, form: error.message }));
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Password strength color
-  const getStrengthColor = () => {
-    if (passwordStrength <= 25) return 'bg-red-500';
-    if (passwordStrength <= 50) return 'bg-orange-500';
-    if (passwordStrength <= 75) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
+  const completedFields = Object.keys(formData).filter(
+    (k) => formData[k] && !errors[k]
+  ).length;
+  const totalFields = Object.keys(formData).length;
+  const progress = Math.round((completedFields / totalFields) * 100);
+
+  const inputBase =
+    'block w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-0';
+  const inputNormal = `${inputBase} border-gray-200 focus:border-blue-500 focus:ring-blue-500/20`;
+  const inputError = `${inputBase} border-red-300 focus:border-red-500 focus:ring-red-500/20`;
+
+  const Field = ({ label, name, icon: Icon, children, required = true }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1.5">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </label>
+      <div className="relative">
+        {Icon && (
+          <Icon className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-gray-400" />
+        )}
+        {children}
+      </div>
+      {touchedFields[name] && errors[name] && (
+        <p className="mt-1.5 text-xs text-red-600">{errors[name]}</p>
+      )}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
-        <h2 className="text-3xl font-bold text-gray-900">Create Account</h2>
-        <p className="mt-2 text-sm text-gray-600">
+      {/* Heading */}
+      <div>
+        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Create your account</h2>
+        <p className="mt-1.5 text-sm text-gray-500">
           Register as a student to submit and track complaints
         </p>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-center space-x-4">
-        {[1, 2, 3].map((step) => (
-          <div key={step} className="flex items-center">
-            <div className={`flex items-center justify-center w-8 h-8 rounded-full ${
-              registrationStep >= step
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-200 text-gray-600'
-            }`}>
-              {registrationStep > step ? (
-                <CheckCircle className="h-5 w-5" />
-              ) : (
-                step
-              )}
-            </div>
-            {step < 3 && (
-              <div className={`w-12 h-1 mx-2 ${
-                registrationStep > step ? 'bg-blue-600' : 'bg-gray-200'
-              }`} />
-            )}
-          </div>
-        ))}
+      {/* Progress */}
+      <div>
+        <div className="flex items-center justify-between mb-1.5">
+          <span className="text-xs font-medium text-gray-500">Profile completion</span>
+          <span className="text-xs font-semibold text-blue-600">{progress}%</span>
+        </div>
+        <div className="h-1.5 w-full rounded-full bg-gray-100 overflow-hidden">
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-blue-600 transition-all duration-500"
+            style={{ width: `${progress}%` }}
+          />
+        </div>
       </div>
 
       {/* Form Error */}
       {errors.form && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5" />
-          <span className="text-sm">{errors.form}</span>
+        <div className="flex items-center gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="h-4 w-4 flex-shrink-0" />
+          <span>{errors.form}</span>
         </div>
       )}
 
-      {/* Registration Form */}
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Step 1: Personal Information */}
-        {registrationStep === 1 && (
-          <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-medium text-gray-900">Personal Information</h3>
-            
-            {/* Full Name */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <User className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="text"
-                  name="fullName"
-                  value={formData.fullName}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    touchedFields.fullName && errors.fullName
-                      ? 'border-red-300'
-                      : 'border-gray-300'
-                  } rounded-lg`}
-                  placeholder="John Doe"
-                />
-              </div>
-              {touchedFields.fullName && errors.fullName && (
-                <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>
-              )}
-            </div>
-
-            {/* University ID */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                University ID
-              </label>
-              <input
-                type="text"
-                name="universityId"
-                value={formData.universityId}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`block w-full px-3 py-2 border ${
-                  touchedFields.universityId && errors.universityId
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } rounded-lg`}
-                placeholder="ASTU/22/1234"
-              />
-              {touchedFields.universityId && errors.universityId && (
-                <p className="mt-1 text-sm text-red-600">{errors.universityId}</p>
-              )}
-            </div>
-
-            {/* Email */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Mail className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    touchedFields.email && errors.email
-                      ? 'border-red-300'
-                      : 'border-gray-300'
-                  } rounded-lg`}
-                  placeholder="you@astu.edu.et"
-                />
-              </div>
-              {touchedFields.email && errors.email && (
-                <p className="mt-1 text-sm text-red-600">{errors.email}</p>
-              )}
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Phone className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full pl-10 pr-3 py-2 border ${
-                    touchedFields.phone && errors.phone
-                      ? 'border-red-300'
-                      : 'border-gray-300'
-                  } rounded-lg`}
-                  placeholder="0912345678"
-                />
-              </div>
-              {touchedFields.phone && errors.phone && (
-                <p className="mt-1 text-sm text-red-600">{errors.phone}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 2: Academic Information */}
-        {registrationStep === 2 && (
-          <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-medium text-gray-900">Academic Information</h3>
-            
-            {/* Department */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Department
-              </label>
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`block w-full px-3 py-2 border ${
-                  touchedFields.department && errors.department
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } rounded-lg`}
-              >
-                <option value="">Select Department</option>
-                {departments.map(dept => (
-                  <option key={dept} value={dept}>{dept}</option>
-                ))}
-              </select>
-              {touchedFields.department && errors.department && (
-                <p className="mt-1 text-sm text-red-600">{errors.department}</p>
-              )}
-            </div>
-
-            {/* Year of Study */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Year of Study
-              </label>
-              <select
-                name="yearOfStudy"
-                value={formData.yearOfStudy}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                className={`block w-full px-3 py-2 border ${
-                  touchedFields.yearOfStudy && errors.yearOfStudy
-                    ? 'border-red-300'
-                    : 'border-gray-300'
-                } rounded-lg`}
-              >
-                <option value="">Select Year</option>
-                <option value="1">1st Year</option>
-                <option value="2">2nd Year</option>
-                <option value="3">3rd Year</option>
-                <option value="4">4th Year</option>
-                <option value="5">5th Year</option>
-              </select>
-              {touchedFields.yearOfStudy && errors.yearOfStudy && (
-                <p className="mt-1 text-sm text-red-600">{errors.yearOfStudy}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Step 3: Security Information */}
-        {registrationStep === 3 && (
-          <div className="space-y-4 animate-fade-in">
-            <h3 className="text-lg font-medium text-gray-900">Security Information</h3>
-            
-            {/* Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full pl-10 pr-10 py-2 border ${
-                    touchedFields.password && errors.password
-                      ? 'border-red-300'
-                      : 'border-gray-300'
-                  } rounded-lg`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              
-              {/* Password Strength Meter */}
-              {formData.password && (
-                <div className="mt-2">
-                  <div className="flex items-center space-x-2">
-                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full ${getStrengthColor()} transition-all duration-300`}
-                        style={{ width: `${passwordStrength}%` }}
-                      />
-                    </div>
-                    <span className="text-xs text-gray-600">
-                      {passwordStrength <= 25 && 'Weak'}
-                      {passwordStrength > 25 && passwordStrength <= 50 && 'Fair'}
-                      {passwordStrength > 50 && passwordStrength <= 75 && 'Good'}
-                      {passwordStrength > 75 && 'Strong'}
-                    </span>
-                  </div>
-                </div>
-              )}
-              
-              {touchedFields.password && errors.password && (
-                <p className="mt-1 text-sm text-red-600">{errors.password}</p>
-              )}
-            </div>
-
-            {/* Confirm Password */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Confirm Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <Lock className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  name="confirmPassword"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  onBlur={handleBlur}
-                  className={`block w-full pl-10 pr-10 py-2 border ${
-                    touchedFields.confirmPassword && errors.confirmPassword
-                      ? 'border-red-300'
-                      : 'border-gray-300'
-                  } rounded-lg`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-              {touchedFields.confirmPassword && errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
-              )}
-            </div>
-
-            {/* Terms Agreement */}
-            <div>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  name="agreeTerms"
-                  checked={formData.agreeTerms}
-                  onChange={handleChange}
-                  className="h-4 w-4 text-blue-600 rounded"
-                />
-                <span className="text-sm text-gray-700">
-                  I agree to the{' '}
-                  <Link to="/terms" className="text-blue-600 hover:underline">
-                    Terms of Service
-                  </Link>{' '}
-                  and{' '}
-                  <Link to="/privacy" className="text-blue-600 hover:underline">
-                    Privacy Policy
-                  </Link>
-                </span>
-              </label>
-              {touchedFields.agreeTerms && errors.agreeTerms && (
-                <p className="mt-1 text-sm text-red-600">{errors.agreeTerms}</p>
-              )}
-            </div>
-          </div>
-        )}
-
-        {/* Navigation Buttons */}
-        <div className="flex space-x-3 pt-4">
-          {registrationStep > 1 && (
-            <button
-              type="button"
-              onClick={handlePrevStep}
-              className="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
-            >
-              Previous
-            </button>
-          )}
-          
-          {registrationStep < 3 ? (
-            <button
-              type="button"
-              onClick={handleNextStep}
-              className="flex-1 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
-            >
-              Next
-            </button>
-          ) : (
-            <button
-              type="submit"
+        {/* Row 1: Name & Email */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Full Name" name="fullName" icon={User}>
+            <input
+              type="text"
+              name="fullName"
+              value={formData.fullName}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.fullName && errors.fullName ? inputError : inputNormal} pl-11`}
+              placeholder="Abebe Kebede"
               disabled={isLoading}
-              className="flex-1 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 disabled:opacity-50"
+            />
+          </Field>
+
+          <Field label="Email" name="email" icon={Mail}>
+            <input
+              type="email"
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.email && errors.email ? inputError : inputNormal} pl-11`}
+              placeholder="you@astu.edu.et"
+              disabled={isLoading}
+            />
+          </Field>
+        </div>
+
+        {/* Row 2: Student ID & Phone */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Student ID" name="studentId" icon={CreditCard}>
+            <input
+              type="text"
+              name="studentId"
+              value={formData.studentId}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.studentId && errors.studentId ? inputError : inputNormal} pl-11`}
+              placeholder="ASTU/22/1234"
+              disabled={isLoading}
+            />
+          </Field>
+
+          <Field label="Phone" name="phone" icon={Phone}>
+            <input
+              type="tel"
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.phone && errors.phone ? inputError : inputNormal} pl-11`}
+              placeholder="0912345678"
+              disabled={isLoading}
+            />
+          </Field>
+        </div>
+
+        {/* Department */}
+        <Field label="Department" name="department" icon={BookOpen}>
+          <select
+            name="department"
+            value={formData.department}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            className={`${touchedFields.department && errors.department ? inputError : inputNormal} pl-11 appearance-none`}
+            disabled={isLoading}
+          >
+            <option value="">Select your department</option>
+            {departments.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        {/* Row 3: Password & Confirm */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Field label="Password" name="password" icon={Lock}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.password && errors.password ? inputError : inputNormal} pl-11 pr-11`}
+              placeholder="Min 8 characters"
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              tabIndex={-1}
             >
-              {isLoading ? (
-                <div className="flex items-center justify-center space-x-2">
-                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  <span>Registering...</span>
-                </div>
+              {showPassword ? (
+                <EyeOff className="h-[18px] w-[18px]" />
               ) : (
-                'Complete Registration'
+                <Eye className="h-[18px] w-[18px]" />
               )}
             </button>
-          )}
+          </Field>
+
+          <Field label="Confirm Password" name="confirmPassword" icon={Lock}>
+            <input
+              type={showConfirmPassword ? 'text' : 'password'}
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              onBlur={handleBlur}
+              className={`${touchedFields.confirmPassword && errors.confirmPassword ? inputError : inputNormal} pl-11 pr-11`}
+              placeholder="Re-enter password"
+              disabled={isLoading}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+              tabIndex={-1}
+            >
+              {showConfirmPassword ? (
+                <EyeOff className="h-[18px] w-[18px]" />
+              ) : (
+                <Eye className="h-[18px] w-[18px]" />
+              )}
+            </button>
+          </Field>
         </div>
+
+        {/* Password strength hints */}
+        {touchedFields.password && formData.password && (
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+            {[
+              { ok: formData.password.length >= 8, text: '8+ characters' },
+              { ok: /[A-Z]/.test(formData.password), text: 'Uppercase letter' },
+              { ok: /[a-z]/.test(formData.password), text: 'Lowercase letter' },
+              { ok: /\d/.test(formData.password), text: 'Number' },
+            ].map((rule) => (
+              <div key={rule.text} className="flex items-center gap-1.5">
+                <CheckCircle2
+                  className={`h-3.5 w-3.5 ${rule.ok ? 'text-green-500' : 'text-gray-300'}`}
+                />
+                <span
+                  className={`text-xs ${rule.ok ? 'text-green-600' : 'text-gray-400'}`}
+                >
+                  {rule.text}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Terms */}
+        <p className="text-xs text-gray-500 leading-relaxed">
+          By creating an account you agree to our{' '}
+          <a href="#" className="text-blue-600 hover:underline">Terms of Service</a> and{' '}
+          <a href="#" className="text-blue-600 hover:underline">Privacy Policy</a>.
+        </p>
+
+        {/* Submit */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="group relative w-full flex items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {isLoading ? (
+            <>
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <span>Creating account...</span>
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-4 w-4" />
+              <span>Create Account</span>
+            </>
+          )}
+        </button>
       </form>
 
-      {/* Login Link */}
-      <p className="text-center text-sm text-gray-600">
+      {/* Login link */}
+      <p className="text-center text-sm text-gray-500">
         Already have an account?{' '}
-        <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-          Sign in here
+        <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+          Sign in
         </Link>
       </p>
     </div>

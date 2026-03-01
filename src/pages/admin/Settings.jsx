@@ -12,7 +12,8 @@ import {
   Lock,
   RefreshCw,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -84,7 +85,7 @@ const Settings = () => {
     { id: 'notifications', label: 'Notifications', icon: Bell },
     { id: 'security', label: 'Security', icon: Shield },
     { id: 'complaints', label: 'Complaints', icon: Database },
-    { id: 'system', label: 'System', icon: Settings }
+    { id: 'system', label: 'System', icon: SettingsIcon }
   ];
 
   const handleSave = async () => {

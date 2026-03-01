@@ -1,86 +1,62 @@
 import React, { useState, useEffect } from 'react';
 import adminService from '../../services/api/adminService';
 import {
-  BarChart3,
   TrendingUp,
+  TrendingDown,
+  BarChart2,
+  PieChart,
+  Activity,
   Calendar,
-  Download,
-  Users,
-  FileText,
-  CheckCircle,
-  Clock,
-  AlertCircle
+  RefreshCw,
+  ArrowUpRight,
+  ArrowDownRight
 } from 'lucide-react';
+import toast from 'react-hot-toast';
 import {
   LineChart,
   Line,
   BarChart,
   Bar,
-  PieChart,
-  Pie,
-  Cell,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  AreaChart,
+  Area,
 } from 'recharts';
-import { format, subDays } from 'date-fns';
-import toast from 'react-hot-toast';
+
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
 
 const Analytics = () => {
-  const [dateRange, setDateRange] = useState('30days');
   const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState({
-    totalComplaints: 0,
-    resolvedComplaints: 0,
-    pendingComplaints: 0,
-    avgResolutionTime: 0,
-    satisfactionRate: 0,
-    activeUsers: 0
-  });
-
-  const [trendData, setTrendData] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-  const [departmentData, setDepartmentData] = useState([]);
-  const [staffPerformance, setStaffPerformance] = useState([]);
-
-  const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'];
+  const [dateRange, setDateRange] = useState('week');
+  const [trends, setTrends] = useState([]);
+  const [departmentStats, setDepartmentStats] = useState([]);
+  const [categoryStats, setCategoryStats] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({});
 
   useEffect(() => {
-    fetchAnalyticsData();
+    fetchAnalytics();
   }, [dateRange]);
 
-  const fetchAnalyticsData = async () => {
+  const fetchAnalytics = async () => {
     try {
       setLoading(true);
-      
-      const [trends, categories, departments, performance] = await Promise.all([
+      const [trendData, deptData, catData, statsData] = await Promise.all([
         adminService.getComplaintTrends(dateRange),
-        adminService.getCategoryStats(),
         adminService.getDepartmentStats(),
-        adminService.getStaffPerformance(dateRange)
+        adminService.getCategoryStats(),
+        adminService.getDashboardStats(dateRange),
       ]);
-
-      setTrendData(trends);
-      setCategoryData(categories);
-      setDepartmentData(departments);
-      setStaffPerformance(performance);
-
-      // Calculate summary stats
-      const total = trends.reduce((acc, curr) => acc + curr.submitted, 0);
-      const resolved = trends.reduce((acc, curr) => acc + curr.resolved, 0);
-      
-      setStats({
-        totalComplaints: total,
-        resolvedComplaints: resolved,
-        pendingComplaints: total - resolved,
-        avgResolutionTime: 2.5, // This would come from API
-        satisfactionRate: 94,
-        activeUsers: 156
-      });
-
+      setTrends(Array.isArray(trendData) ? trendData : []);
+      setDepartmentStats(Array.isArray(deptData) ? deptData : []);
+      setCategoryStats(Array.isArray(catData) ? catData : []);
+      setDashboardStats(statsData && typeof statsData === 'object' ? statsData : {});
     } catch (error) {
       toast.error('Failed to load analytics data');
     } finally {
@@ -88,18 +64,18 @@ const Analytics = () => {
     }
   };
 
-  const handleExport = async (format) => {
-    try {
-      await adminService.exportReport(format, { dateRange });
-      toast.success(`Report exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      toast.error('Failed to export report');
-    }
-  };
+  const kpiCards = [
+    { label: 'Total Complaints', value: dashboardStats.totalComplaints ?? 0, change: '+12%', up: true, icon: BarChart2, color: 'blue' },
+    { label: 'Resolution Rate', value: `${dashboardStats.satisfactionRate ?? 0}%`, change: '+3%', up: true, icon: TrendingUp, color: 'green' },
+    { label: 'Avg Resolution Time', value: `${dashboardStats.avgResolutionTime ?? 0}d`, change: '-0.5d', up: true, icon: Activity, color: 'purple' },
+    { label: 'Escalated', value: dashboardStats.escalatedCount ?? 0, change: '-2', up: true, icon: TrendingDown, color: 'red' },
+  ];
+
+  const colorMap = { blue: 'bg-blue-100 text-blue-600', green: 'bg-green-100 text-green-600', purple: 'bg-purple-100 text-purple-600', red: 'bg-red-100 text-red-600' };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-96">
+      <div className="flex items-center justify-center h-64">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -108,233 +84,134 @@ const Analytics = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Analytics Dashboard</h1>
-          <p className="text-gray-600 mt-1">
-            Comprehensive insights and performance metrics
-          </p>
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-white">Analytics</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Insights and trends for the complaint system</p>
         </div>
-        
-        <div className="mt-4 sm:mt-0 flex items-center space-x-3">
+        <div className="flex items-center gap-3">
           <select
             value={dateRange}
             onChange={(e) => setDateRange(e.target.value)}
-            className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+            className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 dark:text-white"
           >
-            <option value="7days">Last 7 Days</option>
-            <option value="30days">Last 30 Days</option>
-            <option value="90days">Last 90 Days</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="quarter">This Quarter</option>
             <option value="year">This Year</option>
           </select>
-          
           <button
-            onClick={() => handleExport('pdf')}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            onClick={fetchAnalytics}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm"
           >
-            <Download className="h-4 w-4" />
-            <span>Export</span>
+            <RefreshCw className="h-4 w-4" />
+            Refresh
           </button>
         </div>
       </div>
 
-      {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Complaints</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.totalComplaints}</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {kpiCards.map((card) => {
+          const Icon = card.icon;
+          return (
+            <div key={card.label} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+              <div className="flex items-center justify-between mb-3">
+                <div className={`p-2 rounded-lg ${colorMap[card.color]}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <span className={`flex items-center text-xs font-medium ${card.up ? 'text-green-600' : 'text-red-600'}`}>
+                  {card.up ? <ArrowUpRight className="h-3 w-3 mr-0.5" /> : <ArrowDownRight className="h-3 w-3 mr-0.5" />}
+                  {card.change}
+                </span>
+              </div>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{card.value}</p>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{card.label}</p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
-              <FileText className="h-6 w-6 text-blue-600" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-2">↑ 12% from last period</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Resolution Rate</p>
-              <p className="text-3xl font-bold text-gray-900">
-                {((stats.resolvedComplaints / stats.totalComplaints) * 100).toFixed(1)}%
-              </p>
-            </div>
-            <div className="p-3 bg-green-100 rounded-full">
-              <CheckCircle className="h-6 w-6 text-green-600" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-2">{stats.resolvedComplaints} resolved</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Avg Resolution Time</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.avgResolutionTime} days</p>
-            </div>
-            <div className="p-3 bg-orange-100 rounded-full">
-              <Clock className="h-6 w-6 text-orange-600" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-2">↓ 0.5 days improvement</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Satisfaction Rate</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.satisfactionRate}%</p>
-            </div>
-            <div className="p-3 bg-purple-100 rounded-full">
-              <TrendingUp className="h-6 w-6 text-purple-600" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-2">↑ 2% from last month</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Active Users</p>
-              <p className="text-3xl font-bold text-gray-900">{stats.activeUsers}</p>
-            </div>
-            <div className="p-3 bg-indigo-100 rounded-full">
-              <Users className="h-6 w-6 text-indigo-600" />
-            </div>
-          </div>
-          <p className="text-sm text-green-600 mt-2">+15 new this month</p>
-        </div>
-
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Pending</p>
-              <p className="text-3xl font-bold text-yellow-600">{stats.pendingComplaints}</p>
-            </div>
-            <div className="p-3 bg-yellow-100 rounded-full">
-              <AlertCircle className="h-6 w-6 text-yellow-600" />
-            </div>
-          </div>
-          <p className="text-sm text-yellow-600 mt-2">Needs attention</p>
-        </div>
+          );
+        })}
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Complaint Trends */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Complaint Trends</h2>
+      {/* Trends Chart */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Complaint Trends</h2>
+        {trends.length > 0 ? (
           <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={trendData}>
+            <AreaChart data={trends}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="date" />
               <YAxis />
               <Tooltip />
               <Legend />
-              <Line 
-                type="monotone" 
-                dataKey="submitted" 
-                stroke="#3B82F6" 
-                strokeWidth={2}
-                name="Submitted"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="resolved" 
-                stroke="#10B981" 
-                strokeWidth={2}
-                name="Resolved"
-              />
-            </LineChart>
+              <Area type="monotone" dataKey="submitted" stroke="#3B82F6" fill="#3B82F680" name="Submitted" />
+              <Area type="monotone" dataKey="resolved" stroke="#10B981" fill="#10B98180" name="Resolved" />
+            </AreaChart>
           </ResponsiveContainer>
+        ) : (
+          <p className="text-center text-gray-500 py-12">No trend data available</p>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Department Distribution */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">By Department</h2>
+          {departmentStats.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={departmentStats}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="name" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="complaints" fill="#3B82F6" radius={[4, 4, 0, 0]}>
+                  {departmentStats.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-gray-500 py-12">No department data available</p>
+          )}
         </div>
 
         {/* Category Distribution */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Complaints by Category</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <PieChart>
-              <Pie
-                data={categoryData}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {categoryData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+          <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">By Category</h2>
+          {categoryStats.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <RePieChart>
+                <Pie data={categoryStats} cx="50%" cy="50%" outerRadius={100} dataKey="value" nameKey="name" label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
+                  {categoryStats.map((_, index) => (
+                    <Cell key={index} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </RePieChart>
+            </ResponsiveContainer>
+          ) : (
+            <p className="text-center text-gray-500 py-12">No category data available</p>
+          )}
         </div>
       </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Department Performance */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Complaints by Department</h2>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={departmentData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="complaints" fill="#3B82F6" />
-              <Bar dataKey="resolved" fill="#10B981" />
-            </BarChart>
-          </ResponsiveContainer>
+      {/* Resolution Performance */}
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 sm:p-6">
+        <h2 className="text-lg font-semibold text-gray-800 dark:text-white mb-4">Resolution Performance</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {[
+            { label: 'Pending', count: dashboardStats.pendingComplaints ?? 0, color: 'text-yellow-600 bg-yellow-50' },
+            { label: 'In Progress', count: dashboardStats.totalComplaints ? (dashboardStats.totalComplaints - (dashboardStats.pendingComplaints ?? 0) - (dashboardStats.resolvedComplaints ?? 0)) : 0, color: 'text-blue-600 bg-blue-50' },
+            { label: 'Resolved', count: dashboardStats.resolvedComplaints ?? 0, color: 'text-green-600 bg-green-50' },
+            { label: 'Active Staff', count: dashboardStats.activeStaff ?? 0, color: 'text-purple-600 bg-purple-50' },
+          ].map((item) => (
+            <div key={item.label} className={`rounded-lg p-4 text-center ${item.color}`}>
+              <p className="text-2xl font-bold">{item.count}</p>
+              <p className="text-sm mt-1">{item.label}</p>
+            </div>
+          ))}
         </div>
-
-        {/* Staff Performance */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4">Top Performing Staff</h2>
-          <div className="space-y-4">
-            {staffPerformance.slice(0, 5).map((staff, index) => (
-              <div key={staff.id} className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <span className="text-sm font-medium text-gray-500">#{index + 1}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{staff.name}</p>
-                    <p className="text-xs text-gray-500">{staff.department}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-gray-900">{staff.resolved}</p>
-                  <p className="text-xs text-gray-500">resolved</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Time Distribution */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-lg font-semibold text-gray-800 mb-4">Peak Complaint Hours</h2>
-        <ResponsiveContainer width="100%" height={200}>
-          <BarChart data={[
-            { hour: '00-04', count: 12 },
-            { hour: '04-08', count: 8 },
-            { hour: '08-12', count: 45 },
-            { hour: '12-16', count: 52 },
-            { hour: '16-20', count: 38 },
-            { hour: '20-24', count: 21 }
-          ]}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="hour" />
-            <YAxis />
-            <Tooltip />
-            <Bar dataKey="count" fill="#8B5CF6" />
-          </BarChart>
-        </ResponsiveContainer>
       </div>
     </div>
   );

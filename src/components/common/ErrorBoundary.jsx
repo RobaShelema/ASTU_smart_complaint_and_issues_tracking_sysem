@@ -1,6 +1,5 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, Home, ArrowLeft } from 'lucide-react';
-import { Link } from 'react-router-dom';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -124,14 +123,13 @@ class ErrorBoundary extends React.Component {
                 Go Back
               </button>
               
-              <Link
-                to="/"
-                onClick={this.handleReset}
-                className="btn-outline w-full sm:w-auto"
+              <a
+                href="/"
+                className="btn-outline w-full sm:w-auto inline-flex items-center justify-center"
               >
                 <Home className="h-4 w-4 mr-2" />
                 Go Home
-              </Link>
+              </a>
             </div>
 
             {/* Error Code */}

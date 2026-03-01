@@ -121,7 +121,17 @@ class ComplaintService {
   async getMyComplaints() {
     try {
       const response = await api.get('/complaints/my');
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Get student complaints by student ID
+  async getStudentComplaints(studentId) {
+    try {
+      const response = await api.get(`/complaints/student/${studentId}`);
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
@@ -131,10 +141,25 @@ class ComplaintService {
   async getAssignedComplaints() {
     try {
       const response = await api.get('/complaints/assigned');
-      return response.data;
+      return Array.isArray(response.data) ? response.data : [];
     } catch (error) {
       throw this.handleError(error);
     }
+  }
+
+  // Get complaints assigned to a specific staff member
+  async getStaffAssigned(staffId) {
+    try {
+      const response = await api.get(`/complaints/staff/${staffId}`);
+      return Array.isArray(response.data) ? response.data : [];
+    } catch (error) {
+      throw this.handleError(error);
+    }
+  }
+
+  // Create complaint (alias)
+  async create(complaintData) {
+    return this.createComplaint(complaintData);
   }
 
   // Get complaint statistics

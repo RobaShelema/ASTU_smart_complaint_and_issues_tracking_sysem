@@ -15,26 +15,26 @@ const StatsCard = ({ title, value, icon: Icon, color = 'blue', trend }) => {
   const isPositiveTrend = trend && !trend.startsWith('-');
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className={`p-3 rounded-lg ${colorClasses[color]}`}>
-          <Icon className="h-6 w-6" />
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 sm:p-6 transition-shadow hover:shadow-md">
+      <div className="flex items-center justify-between mb-3">
+        <div className={`p-2 sm:p-3 rounded-lg ${colorClasses[color]}`}>
+          <Icon className="h-5 w-5 sm:h-6 sm:w-6" />
         </div>
         {trend && (
-          <div className={`flex items-center text-sm ${
+          <div className={`flex items-center text-xs sm:text-sm ${
             isPositiveTrend ? 'text-green-600' : 'text-red-600'
           }`}>
             {isPositiveTrend ? (
-              <TrendingUp className="h-4 w-4 mr-1" />
+              <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             ) : (
-              <TrendingDown className="h-4 w-4 mr-1" />
+              <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
             )}
             <span>{trend}</span>
           </div>
         )}
       </div>
-      <h3 className="text-2xl font-bold text-gray-800">{value}</h3>
-      <p className="text-sm text-gray-600 mt-1">{title}</p>
+      <h3 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-100">{value}</h3>
+      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 mt-1">{title}</p>
     </div>
   );
 };
