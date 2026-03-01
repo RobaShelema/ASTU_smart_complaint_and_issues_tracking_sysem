@@ -17,6 +17,13 @@ import {
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormat = (dateStr, pattern) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'N/A';
+  return format(d, pattern);
+};
+
 const ComplaintDetails = () => {
   const { id } = useParams();
   const [complaint, setComplaint] = useState(null);
@@ -30,7 +37,7 @@ const ComplaintDetails = () => {
   const fetchComplaintDetails = async () => {
     try {
       setLoading(true);
-      const data = await complaintService.getById(id);
+      const data = await complaintService.getComplaintById(id);
       setComplaint(data);
     } catch (error) {
       toast.error('Failed to load complaint details');
@@ -111,10 +118,10 @@ const ComplaintDetails = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Submitted On</p>
                 <p className="text-sm text-gray-600">
-                  {format(new Date(complaint.createdAt), 'PPP')}
+                  {safeFormat(complaint.createdAt, 'PPP')}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(complaint.createdAt), 'p')}
+                  {safeFormat(complaint.createdAt, 'p')}
                 </p>
               </div>
             </div>
@@ -142,10 +149,10 @@ const ComplaintDetails = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Last Updated</p>
                 <p className="text-sm text-gray-600">
-                  {format(new Date(complaint.updatedAt), 'PPP')}
+                  {safeFormat(complaint.updatedAt, 'PPP')}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(complaint.updatedAt), 'p')}
+                  {safeFormat(complaint.updatedAt, 'p')}
                 </p>
               </div>
             </div>
@@ -223,7 +230,7 @@ const ComplaintDetails = () => {
                       {comment.userName}
                     </span>
                     <span className="text-xs text-gray-500">
-                      {format(new Date(comment.createdAt), 'PPp')}
+                      {safeFormat(comment.createdAt, 'PPp')}
                     </span>
                   </div>
                   <p className="text-sm text-gray-700">{comment.text}</p>

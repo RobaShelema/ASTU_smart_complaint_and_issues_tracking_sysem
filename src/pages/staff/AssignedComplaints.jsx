@@ -27,15 +27,15 @@ const AssignedComplaints = () => {
       const data = await complaintService.getAssignedComplaints();
       setComplaints(data);
       
-      // Calculate stats
       const now = new Date();
       setStats({
         total: data.length,
         pending: data.filter(c => c.status === 'pending').length,
         inProgress: data.filter(c => c.status === 'in_progress').length,
         overdue: data.filter(c => {
+          if (!c.deadline || c.status === 'resolved' || c.status === 'closed') return false;
           const deadline = new Date(c.deadline);
-          return deadline < now && c.status !== 'resolved';
+          return !isNaN(deadline.getTime()) && deadline < now;
         }).length
       });
     } catch (error) {
@@ -57,6 +57,32 @@ const AssignedComplaints = () => {
 
   const handleResolve = async (complaint) => {
     // Navigate to resolution page or open modal
+  };
+
+  const handleExport = () => {
+    if (filteredComplaints.length === 0) {
+      toast.error('No complaints to export');
+      return;
+    }
+    const headers = ['ID', 'Title', 'Category', 'Priority', 'Status', 'Created At', 'Deadline'];
+    const rows = filteredComplaints.map(c => [
+      c.id,
+      `"${(c.title || '').replace(/"/g, '""')}"`,
+      c.category || '',
+      c.priority || '',
+      c.status || '',
+      c.createdAt || '',
+      c.deadline || '',
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `assigned-complaints-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success('Exported successfully');
   };
 
   const filteredComplaints = complaints.filter(complaint => {
@@ -150,7 +176,7 @@ const AssignedComplaints = () => {
             </select>
 
             <button
-              onClick={() => {/* Export logic */}}
+              onClick={handleExport}
               className="flex items-center space-x-2 px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
             >
               <Download className="h-4 w-4" />

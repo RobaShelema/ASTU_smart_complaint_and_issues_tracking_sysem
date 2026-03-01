@@ -6,7 +6,7 @@ import QuickReplies from './QuickReplies';
 import TypingIndicator from './TypingIndicator';
 
 const ChatWindow = () => {
-  const { messages, isTyping, clearChat } = useChatbot();
+  const { messages, isTyping, clearMessages } = useChatbot();
   const messagesEndRef = useRef(null);
 
   const scrollToBottom = () => {
@@ -25,7 +25,7 @@ const ChatWindow = () => {
           {messages.length} messages
         </span>
         <button
-          onClick={clearChat}
+          onClick={clearMessages}
           className="text-xs text-gray-500 hover:text-gray-700"
         >
           Clear chat

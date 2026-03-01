@@ -88,7 +88,7 @@ const AuthLayout = () => {
 
         {/* Scrollable form container */}
         <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full flex items-center justify-center px-5 py-10 sm:px-8 bg-gray-50">
+          <div className="min-h-full flex items-center justify-center px-5 py-10 sm:px-8 bg-gray-50 dark:bg-gray-900">
             <div className="w-full max-w-[440px]">
               <Outlet />
 

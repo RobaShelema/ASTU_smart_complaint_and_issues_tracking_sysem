@@ -11,6 +11,13 @@ import {
 import StatusBadge from '../common/StatusBadge';
 import { formatDistanceToNow } from 'date-fns';
 
+const safeTimeAgo = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'N/A';
+  return formatDistanceToNow(d, { addSuffix: true });
+};
+
 const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) => {
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -33,8 +40,8 @@ const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) 
     let bValue = b[sortField];
 
     if (sortField === 'createdAt') {
-      aValue = new Date(a.createdAt);
-      bValue = new Date(b.createdAt);
+      aValue = new Date(a.createdAt).getTime() || 0;
+      bValue = new Date(b.createdAt).getTime() || 0;
     }
 
     if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
@@ -53,14 +60,15 @@ const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) 
   // Export to CSV
   const exportToCSV = () => {
     const headers = ['ID', 'Title', 'Category', 'Status', 'Priority', 'Created', 'Last Updated'];
+    const safeDate = (v) => { const d = new Date(v); return isNaN(d.getTime()) ? '' : d.toLocaleDateString(); };
     const csvData = filteredComplaints.map(c => [
       c.id,
-      c.title,
+      `"${(c.title || '').replace(/"/g, '""')}"`,
       c.category,
       c.status,
       c.priority,
-      new Date(c.createdAt).toLocaleDateString(),
-      new Date(c.updatedAt).toLocaleDateString()
+      safeDate(c.createdAt),
+      safeDate(c.updatedAt)
     ]);
 
     const csv = [headers, ...csvData].map(row => row.join(',')).join('\n');
@@ -221,7 +229,7 @@ const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) 
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDistanceToNow(new Date(complaint.createdAt), { addSuffix: true })}
+                    {safeTimeAgo(complaint.createdAt)}
                   </td>
                   {showActions && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

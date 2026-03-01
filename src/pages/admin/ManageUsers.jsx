@@ -13,7 +13,8 @@ import {
   Shield,
   MoreVertical,
   CheckCircle,
-  XCircle
+  XCircle,
+  AlertTriangle
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -47,10 +48,11 @@ const ManageUsers = () => {
 
   const handleAddUser = async (userData) => {
     try {
-      await adminService.createUser(userData);
+      const response = await adminService.createUser(userData);
+      const newUser = { id: 'u-' + Date.now(), ...userData, status: 'active', createdAt: new Date().toISOString(), ...response };
+      setUsers((prev) => [newUser, ...prev]);
       toast.success('User created successfully');
       setShowAddModal(false);
-      fetchUsers();
     } catch (error) {
       toast.error('Failed to create user');
     }
@@ -59,9 +61,9 @@ const ManageUsers = () => {
   const handleEditUser = async (userId, userData) => {
     try {
       await adminService.updateUser(userId, userData);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, ...userData } : u)));
       toast.success('User updated successfully');
       setShowEditModal(null);
-      fetchUsers();
     } catch (error) {
       toast.error('Failed to update user');
     }
@@ -70,9 +72,10 @@ const ManageUsers = () => {
   const handleDeleteUser = async (userId) => {
     try {
       await adminService.deleteUser(userId);
+      setUsers((prev) => prev.filter((u) => u.id !== userId));
+      setSelectedUsers((prev) => prev.filter((id) => id !== userId));
       toast.success('User deleted successfully');
       setShowDeleteModal(null);
-      fetchUsers();
     } catch (error) {
       toast.error('Failed to delete user');
     }
@@ -136,8 +139,8 @@ const ManageUsers = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">User Management</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">User Management</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Manage students, staff, and administrators
           </p>
         </div>
@@ -152,24 +155,24 @@ const ManageUsers = () => {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Total Users</p>
-          <p className="text-2xl font-bold text-gray-900">{users.length}</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Total Users</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{users.length}</p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Students</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Students</p>
           <p className="text-2xl font-bold text-blue-600">
             {users.filter(u => u.role === 'student').length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Staff</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Staff</p>
           <p className="text-2xl font-bold text-green-600">
             {users.filter(u => u.role === 'staff').length}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <p className="text-sm text-gray-600">Admins</p>
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <p className="text-sm text-gray-600 dark:text-gray-400">Admins</p>
           <p className="text-2xl font-bold text-purple-600">
             {users.filter(u => u.role === 'admin').length}
           </p>
@@ -177,7 +180,7 @@ const ManageUsers = () => {
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -186,14 +189,14 @@ const ManageUsers = () => {
               placeholder="Search users by name, email, or ID..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
           <div className="flex space-x-2">
             <select
               value={filterRole}
               onChange={(e) => setFilterRole(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Roles</option>
               <option value="student">Student</option>
@@ -203,7 +206,7 @@ const ManageUsers = () => {
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -250,10 +253,10 @@ const ManageUsers = () => {
       </div>
 
       {/* Users Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700/50">
               <tr>
                 <th className="px-6 py-3 text-left">
                   <input
@@ -263,15 +266,15 @@ const ManageUsers = () => {
                     className="h-4 w-4 text-blue-600 rounded"
                   />
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Role</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Last Active</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">User</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Role</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Department</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Last Active</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase">Actions</th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {loading ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
@@ -288,7 +291,7 @@ const ManageUsers = () => {
                 </tr>
               ) : (
                 filteredUsers.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
+                  <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-700/50">
                     <td className="px-6 py-4">
                       <input
                         type="checkbox"
@@ -305,9 +308,9 @@ const ManageUsers = () => {
                           </span>
                         </div>
                         <div className="ml-3">
-                          <p className="text-sm font-medium text-gray-900">{user.name}</p>
-                          <p className="text-xs text-gray-500">{user.email}</p>
-                          <p className="text-xs text-gray-400">ID: {user.id}</p>
+                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{user.name}</p>
+                          <p className="text-xs text-gray-500 dark:text-gray-400">{user.email}</p>
+                          <p className="text-xs text-gray-400 dark:text-gray-500">ID: {user.id}</p>
                         </div>
                       </div>
                     </td>
@@ -320,7 +323,7 @@ const ManageUsers = () => {
                         {user.role}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {user.department || 'N/A'}
                     </td>
                     <td className="px-6 py-4">
@@ -335,7 +338,7 @@ const ManageUsers = () => {
                         {user.status}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500">
+                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
                       {user.lastActive || 'Never'}
                     </td>
                     <td className="px-6 py-4 text-right text-sm font-medium space-x-2">
@@ -369,8 +372,8 @@ const ManageUsers = () => {
         </div>
 
         {/* Pagination */}
-        <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-          <div className="text-sm text-gray-700">
+        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
+          <div className="text-sm text-gray-700 dark:text-gray-300">
             Showing 1 to {filteredUsers.length} of {filteredUsers.length} results
           </div>
           <div className="flex space-x-2">
@@ -442,44 +445,44 @@ const UserModal = ({ user, onClose, onSubmit, title }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">{title}</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">{title}</h3>
         
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Full Name
             </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Email Address
             </label>
             <input
               type="email"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
               required
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Role
             </label>
             <select
               value={formData.role}
               onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="student">Student</option>
               <option value="staff">Staff</option>
@@ -488,37 +491,37 @@ const UserModal = ({ user, onClose, onSubmit, title }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Department
             </label>
             <input
               type="text"
               value={formData.department}
               onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Phone Number
             </label>
             <input
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
               Status
             </label>
             <select
               value={formData.status}
               onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
             >
               <option value="active">Active</option>
               <option value="inactive">Inactive</option>
@@ -530,7 +533,7 @@ const UserModal = ({ user, onClose, onSubmit, title }) => {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancel
             </button>
@@ -551,19 +554,19 @@ const UserModal = ({ user, onClose, onSubmit, title }) => {
 const DeleteConfirmationModal = ({ user, onClose, onConfirm }) => {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
         <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/30 mb-4">
             <AlertTriangle className="h-6 w-6 text-red-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900 mb-2">Delete User</h3>
-          <p className="text-sm text-gray-500 mb-4">
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Delete User</h3>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">
             Are you sure you want to delete {user.name}? This action cannot be undone.
           </p>
           <div className="flex justify-center space-x-3">
             <button
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
             >
               Cancel
             </button>

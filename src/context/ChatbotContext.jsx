@@ -1,4 +1,5 @@
 import React, { createContext, useState, useContext, useCallback } from 'react';
+import chatbotService from '../services/api/chatbotService';
 
 const ChatbotContext = createContext(null);
 
@@ -10,21 +11,29 @@ export const useChatbot = () => {
   return context;
 };
 
+const DEFAULT_SUGGESTIONS = [
+  'How do I submit a complaint?',
+  'Track my complaint',
+  'What categories are available?',
+  'How long does resolution take?',
+];
+
 export const ChatbotProvider = ({ children }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       id: 'welcome',
       type: 'bot',
-      text: 'Hello! I\'m the ASTU Assistant. How can I help you today?',
+      text: "Hello! I'm the ASTU Assistant. How can I help you today?",
       timestamp: new Date().toISOString(),
     },
   ]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
+  const [suggestions, setSuggestions] = useState(DEFAULT_SUGGESTIONS);
 
   const toggleChat = useCallback(() => {
-    setIsOpen(prev => {
+    setIsOpen((prev) => {
       if (!prev) setUnreadCount(0);
       return !prev;
     });
@@ -39,44 +48,54 @@ export const ChatbotProvider = ({ children }) => {
     setIsOpen(false);
   }, []);
 
-  const addMessage = useCallback((message) => {
-    const newMessage = {
-      id: Date.now().toString(),
-      timestamp: new Date().toISOString(),
-      ...message,
-    };
-    setMessages(prev => [...prev, newMessage]);
+  const addMessage = useCallback(
+    (message) => {
+      const newMessage = {
+        id: Date.now().toString(),
+        timestamp: new Date().toISOString(),
+        ...message,
+      };
+      setMessages((prev) => [...prev, newMessage]);
 
-    if (message.type === 'bot' && !isOpen) {
-      setUnreadCount(prev => prev + 1);
-    }
-  }, [isOpen]);
+      if (message.type === 'bot' && !isOpen) {
+        setUnreadCount((prev) => prev + 1);
+      }
+    },
+    [isOpen]
+  );
 
-  const sendMessage = useCallback(async (text) => {
-    addMessage({ type: 'user', text });
-    setIsTyping(true);
+  const sendMessage = useCallback(
+    async (text) => {
+      addMessage({ type: 'user', text });
+      setIsTyping(true);
 
-    setTimeout(() => {
-      const responses = [
-        'I can help you with filing complaints, checking status, and general university inquiries.',
-        'To submit a new complaint, go to the "New Complaint" section from your dashboard.',
-        'You can track your complaint status in the "My Complaints" section.',
-        'For urgent matters, please contact the administration office directly.',
-        'Is there anything else I can help you with?',
-      ];
-      const response = responses[Math.floor(Math.random() * responses.length)];
-      addMessage({ type: 'bot', text: response });
-      setIsTyping(false);
-    }, 1000 + Math.random() * 1500);
-  }, [addMessage]);
+      setTimeout(() => {
+        const fallback = chatbotService.getFallbackResponse(text);
+        addMessage({ type: 'bot', text: fallback.response });
+        setSuggestions(fallback.suggestions || []);
+        setIsTyping(false);
+      }, 800 + Math.random() * 1200);
+    },
+    [addMessage]
+  );
+
+  const handleSuggestionClick = useCallback(
+    (suggestion) => {
+      sendMessage(suggestion);
+    },
+    [sendMessage]
+  );
 
   const clearMessages = useCallback(() => {
-    setMessages([{
-      id: 'welcome',
-      type: 'bot',
-      text: 'Hello! I\'m the ASTU Assistant. How can I help you today?',
-      timestamp: new Date().toISOString(),
-    }]);
+    setMessages([
+      {
+        id: 'welcome',
+        type: 'bot',
+        text: "Hello! I'm the ASTU Assistant. How can I help you today?",
+        timestamp: new Date().toISOString(),
+      },
+    ]);
+    setSuggestions(DEFAULT_SUGGESTIONS);
   }, []);
 
   const value = {
@@ -84,17 +103,17 @@ export const ChatbotProvider = ({ children }) => {
     messages,
     unreadCount,
     isTyping,
+    suggestions,
     toggleChat,
     openChat,
     closeChat,
     sendMessage,
     addMessage,
     clearMessages,
+    handleSuggestionClick,
   };
 
   return (
-    <ChatbotContext.Provider value={value}>
-      {children}
-    </ChatbotContext.Provider>
+    <ChatbotContext.Provider value={value}>{children}</ChatbotContext.Provider>
   );
 };

@@ -113,12 +113,23 @@ const StudentDashboard = () => {
 
   const handleNewComplaint = async (complaintData) => {
     try {
-      await complaintService.create(complaintData);
+      const result = await complaintService.create(complaintData);
+      const newComplaint = {
+        id: result?.id || 'CMP' + Date.now().toString().slice(-4),
+        ...complaintData,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+      setComplaints((prev) => [newComplaint, ...prev]);
+      setStats((prev) => ({
+        ...prev,
+        total: prev.total + 1,
+        pending: prev.pending + 1,
+      }));
       toast.success('Complaint submitted successfully!');
       setShowComplaintForm(false);
-      fetchComplaints();
-      
-      // Add notification
+
       addNotification({
         type: 'success',
         message: 'Your complaint has been submitted successfully'

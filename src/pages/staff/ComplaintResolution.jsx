@@ -8,6 +8,13 @@ import { ArrowLeft, User, Calendar, MapPin, Tag, Clock, AlertCircle } from 'luci
 import { format } from 'date-fns';
 import toast from 'react-hot-toast';
 
+const safeFormat = (dateStr, pattern) => {
+  if (!dateStr) return 'N/A';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 'N/A';
+  return format(d, pattern);
+};
+
 const ComplaintResolution = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -71,7 +78,8 @@ const ComplaintResolution = () => {
     );
   }
 
-  const isOverdue = complaint.deadline && new Date(complaint.deadline) < new Date();
+  const deadlineDate = complaint.deadline ? new Date(complaint.deadline) : null;
+  const isOverdue = deadlineDate && !isNaN(deadlineDate.getTime()) && deadlineDate < new Date();
 
   return (
     <div className="space-y-6">
@@ -121,10 +129,10 @@ const ComplaintResolution = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Submitted On</p>
                 <p className="text-sm text-gray-600">
-                  {format(new Date(complaint.createdAt), 'PPP')}
+                  {safeFormat(complaint.createdAt, 'PPP')}
                 </p>
                 <p className="text-xs text-gray-500">
-                  {format(new Date(complaint.createdAt), 'p')}
+                  {safeFormat(complaint.createdAt, 'p')}
                 </p>
               </div>
             </div>
@@ -152,7 +160,7 @@ const ComplaintResolution = () => {
               <div>
                 <p className="text-sm font-medium text-gray-900">Deadline</p>
                 <p className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
-                  {complaint.deadline ? format(new Date(complaint.deadline), 'PPP') : 'No deadline set'}
+                  {complaint.deadline ? safeFormat(complaint.deadline, 'PPP') : 'No deadline set'}
                 </p>
               </div>
             </div>

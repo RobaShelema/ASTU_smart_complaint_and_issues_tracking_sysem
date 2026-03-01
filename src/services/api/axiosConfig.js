@@ -167,20 +167,22 @@ function getMockLoginResponse(credentials) {
   const password = credentials?.password || '';
 
   // Check registered users from localStorage
-  const stored = localStorage.getItem('registeredUser');
   let registeredAccounts = [];
-  if (stored) {
-    try {
-      const user = JSON.parse(stored);
-      registeredAccounts.push({
-        email: (user.email || '').toLowerCase(),
-        password: user.password || 'Password123',
-        role: 'student',
-        name: user.name || 'Student',
-        id: user.id || 'reg-' + Date.now(),
-      });
-    } catch (_) {}
-  }
+  try {
+    const stored = localStorage.getItem('registeredUsers');
+    if (stored) {
+      const users = JSON.parse(stored);
+      if (Array.isArray(users)) {
+        registeredAccounts = users.map(u => ({
+          email: (u.email || '').toLowerCase(),
+          password: u.password || 'Password123',
+          role: u.role || 'student',
+          name: u.name || 'User',
+          id: u.id || 'reg-' + Date.now(),
+        }));
+      }
+    }
+  } catch (_) {}
 
   const allAccounts = [...VALID_ACCOUNTS, ...registeredAccounts];
   const match = allAccounts.find(a => a.email === email && a.password === password);
@@ -269,7 +271,14 @@ function getMockGetResponse(url) {
   if (url.includes('/admin/reports'))
     return [];
 
-  // Generic complaint by ID (keep last)
+  // Single complaint by ID — match /complaints/<id> but not sub-paths already handled
+  const idMatch = url.match(/\/complaints\/([^/]+)$/);
+  if (idMatch) {
+    const found = MOCK_COMPLAINTS.find(c => c.id === idMatch[1]);
+    return found || MOCK_COMPLAINTS[0];
+  }
+
+  // Generic complaints fallback
   if (url.includes('/complaints'))
     return MOCK_COMPLAINTS;
 
@@ -291,9 +300,19 @@ export const api = {
         name: data.name || data.fullName || 'New User',
         email: (data.email || '').toLowerCase().trim(),
         password: data.password,
-        role: 'student',
+        role: data.role || 'student',
       };
-      localStorage.setItem('registeredUser', JSON.stringify(newUser));
+      let existing = [];
+      try {
+        const stored = localStorage.getItem('registeredUsers');
+        if (stored) existing = JSON.parse(stored);
+        if (!Array.isArray(existing)) existing = [];
+      } catch (_) { existing = []; }
+      if (existing.some(u => u.email === newUser.email)) {
+        throw new Error('An account with this email already exists. Please use a different email or sign in.');
+      }
+      existing.push(newUser);
+      localStorage.setItem('registeredUsers', JSON.stringify(existing));
       return { data: { success: true, message: 'Registration successful! Please login with your credentials.', user: newUser } };
     }
     if (url === '/auth/logout') return { data: { success: true } };

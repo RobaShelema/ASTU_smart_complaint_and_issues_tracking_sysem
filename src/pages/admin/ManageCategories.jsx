@@ -48,9 +48,12 @@ const ManageCategories = () => {
     try {
       if (editingCategory) {
         await adminService.updateCategory(editingCategory.id, formData);
+        setCategories((prev) => prev.map((c) => (c.id === editingCategory.id ? { ...c, ...formData } : c)));
         toast.success('Category updated successfully');
       } else {
         await adminService.createCategory(formData);
+        const newCat = { id: 'cat-' + Date.now(), ...formData, complaintsCount: 0 };
+        setCategories((prev) => [newCat, ...prev]);
         toast.success('Category created successfully');
       }
       setShowModal(false);
@@ -63,7 +66,6 @@ const ManageCategories = () => {
         slaDays: 3,
         isActive: true
       });
-      fetchCategories();
     } catch (error) {
       toast.error(error.message || 'Operation failed');
     }
@@ -87,8 +89,8 @@ const ManageCategories = () => {
     
     try {
       await adminService.deleteCategory(id);
+      setCategories((prev) => prev.filter((c) => c.id !== id));
       toast.success('Category deleted successfully');
-      fetchCategories();
     } catch (error) {
       toast.error('Failed to delete category');
     }
@@ -104,8 +106,8 @@ const ManageCategories = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Manage Categories</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-100">Manage Categories</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
             Create and manage complaint categories
           </p>
         </div>
@@ -130,7 +132,7 @@ const ManageCategories = () => {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-lg shadow p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
           <input
@@ -138,7 +140,7 @@ const ManageCategories = () => {
             placeholder="Search categories..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="w-full pl-10 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
       </div>
@@ -153,7 +155,7 @@ const ManageCategories = () => {
           {filteredCategories.map((category) => (
             <div
               key={category.id}
-              className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow"
+              className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 hover:shadow-md transition-shadow"
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center space-x-3">
@@ -161,7 +163,7 @@ const ManageCategories = () => {
                     <Tag className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">{category.name}</h3>
+                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">{category.name}</h3>
                     <p className="text-sm text-gray-500 mt-1">
                       {category.complaintsCount || 0} complaints
                     </p>
@@ -230,9 +232,9 @@ const ManageCategories = () => {
       {/* Category Modal */}
       {showModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
                 {editingCategory ? 'Edit Category' : 'Add New Category'}
               </h3>
               <button
@@ -245,52 +247,52 @@ const ManageCategories = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Category Name *
                 </label>
                 <input
                   type="text"
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Description
                 </label>
                 <textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   rows="3"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   Department
                 </label>
                 <input
                   type="text"
                   value={formData.department}
                   onChange={(e) => setFormData({ ...formData, department: e.target.value })}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   placeholder="e.g., IT, Maintenance"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Default Priority
                   </label>
                   <select
                     value={formData.priority}
                     onChange={(e) => setFormData({ ...formData, priority: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   >
                     <option value="low">Low</option>
                     <option value="medium">Medium</option>
@@ -300,7 +302,7 @@ const ManageCategories = () => {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     SLA (Days)
                   </label>
                   <input
@@ -308,7 +310,7 @@ const ManageCategories = () => {
                     min="1"
                     value={formData.slaDays}
                     onChange={(e) => setFormData({ ...formData, slaDays: parseInt(e.target.value) })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
                   />
                 </div>
               </div>
@@ -321,7 +323,7 @@ const ManageCategories = () => {
                   onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
                   className="h-4 w-4 text-blue-600 rounded"
                 />
-                <label htmlFor="isActive" className="text-sm text-gray-700">
+                <label htmlFor="isActive" className="text-sm text-gray-700 dark:text-gray-300">
                   Active
                 </label>
               </div>

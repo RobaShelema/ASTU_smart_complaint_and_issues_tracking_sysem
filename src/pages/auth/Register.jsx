@@ -12,13 +12,16 @@ import {
   UserPlus,
   CreditCard,
   CheckCircle2,
+  Shield,
+  GraduationCap,
+  Briefcase,
 } from 'lucide-react';
 import authService from '../../services/api/authService';
 import toast from 'react-hot-toast';
 
 const Field = ({ label, name, icon: Icon, children, required = true, touched, error }) => (
   <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
       {label}
       {required && <span className="text-red-500 ml-0.5">*</span>}
     </label>
@@ -34,9 +37,16 @@ const Field = ({ label, name, icon: Icon, children, required = true, touched, er
   </div>
 );
 
+const ROLES = [
+  { value: 'student', label: 'Student', icon: GraduationCap, color: 'blue', desc: 'Submit & track complaints' },
+  { value: 'staff', label: 'Staff', icon: Briefcase, color: 'emerald', desc: 'Resolve assigned complaints' },
+  { value: 'admin', label: 'Admin', icon: Shield, color: 'violet', desc: 'Manage entire system' },
+];
+
 const Register = () => {
   const navigate = useNavigate();
 
+  const [selectedRole, setSelectedRole] = useState('student');
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -45,6 +55,7 @@ const Register = () => {
     phone: '',
     department: '',
     studentId: '',
+    staffId: '',
   });
 
   const [errors, setErrors] = useState({});
@@ -110,7 +121,10 @@ const Register = () => {
         if (!value) error = 'Select your department';
         break;
       case 'studentId':
-        if (!value.trim()) error = 'Student ID is required';
+        if (selectedRole === 'student' && !value.trim()) error = 'Student ID is required';
+        break;
+      case 'staffId':
+        if (selectedRole === 'staff' && !value.trim()) error = 'Staff ID is required';
         break;
       default:
         break;
@@ -119,9 +133,17 @@ const Register = () => {
     return !error;
   };
 
+  const getActiveFields = () => {
+    const base = ['fullName', 'email', 'phone', 'department', 'password', 'confirmPassword'];
+    if (selectedRole === 'student') return [...base, 'studentId'];
+    if (selectedRole === 'staff') return [...base, 'staffId'];
+    return base;
+  };
+
   const validateForm = () => {
     let valid = true;
-    Object.keys(formData).forEach((f) => {
+    const activeFields = getActiveFields();
+    activeFields.forEach((f) => {
       if (!validateField(f, formData[f])) valid = false;
     });
     return valid;
@@ -129,8 +151,9 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    const activeFields = getActiveFields();
     const allTouched = {};
-    Object.keys(formData).forEach((k) => (allTouched[k] = true));
+    activeFields.forEach((k) => (allTouched[k] = true));
     setTouchedFields(allTouched);
 
     if (!validateForm()) {
@@ -140,18 +163,20 @@ const Register = () => {
 
     setIsLoading(true);
     try {
-      const response = await authService.register({
+      const payload = {
         name: formData.fullName,
         email: formData.email,
         password: formData.password,
         password_confirmation: formData.confirmPassword,
         phone: formData.phone,
         department: formData.department,
-        studentId: formData.studentId,
-        role: 'student',
-      });
+        role: selectedRole,
+      };
+      if (selectedRole === 'student') payload.studentId = formData.studentId;
+      if (selectedRole === 'staff') payload.staffId = formData.staffId;
+
+      const response = await authService.register(payload);
       toast.success(response.message || 'Registration successful!');
-      localStorage.setItem('registeredUser', JSON.stringify(response.user));
       setTimeout(() => {
         navigate('/login', { state: { message: 'Registration successful! Please login.' } });
       }, 2000);
@@ -163,25 +188,58 @@ const Register = () => {
     }
   };
 
-  const completedFields = Object.keys(formData).filter(
+  const activeFields = getActiveFields();
+  const completedFields = activeFields.filter(
     (k) => formData[k] && !errors[k]
   ).length;
-  const totalFields = Object.keys(formData).length;
-  const progress = Math.round((completedFields / totalFields) * 100);
+  const progress = Math.round((completedFields / activeFields.length) * 100);
 
   const inputBase =
-    'block w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-0';
-  const inputNormal = `${inputBase} border-gray-200 focus:border-blue-500 focus:ring-blue-500/20`;
-  const inputError = `${inputBase} border-red-300 focus:border-red-500 focus:ring-red-500/20`;
+    'block w-full rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-0 dark:focus:ring-offset-gray-900';
+  const inputNormal = `${inputBase} border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20`;
+  const inputError = `${inputBase} border-red-300 dark:border-red-500/50 focus:border-red-500 focus:ring-red-500/20`;
 
   return (
     <div className="space-y-6">
       {/* Heading */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 tracking-tight">Create your account</h2>
-        <p className="mt-1.5 text-sm text-gray-500">
-          Register as a student to submit and track complaints
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Create your account</h2>
+        <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
+          Register to submit, manage, or track complaints
         </p>
+      </div>
+
+      {/* Role Selector */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2.5">I am registering as</label>
+        <div className="grid grid-cols-3 gap-2">
+          {ROLES.map((r) => {
+            const active = selectedRole === r.value;
+            const Icon = r.icon;
+            const colorMap = {
+              blue: active ? 'border-blue-500 bg-blue-50 ring-2 ring-blue-500/20' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50/50',
+              emerald: active ? 'border-emerald-500 bg-emerald-50 ring-2 ring-emerald-500/20' : 'border-gray-200 hover:border-emerald-300 hover:bg-emerald-50/50',
+              violet: active ? 'border-violet-500 bg-violet-50 ring-2 ring-violet-500/20' : 'border-gray-200 hover:border-violet-300 hover:bg-violet-50/50',
+            };
+            const iconColor = {
+              blue: active ? 'text-blue-600' : 'text-gray-400',
+              emerald: active ? 'text-emerald-600' : 'text-gray-400',
+              violet: active ? 'text-violet-600' : 'text-gray-400',
+            };
+            return (
+              <button
+                key={r.value}
+                type="button"
+                onClick={() => setSelectedRole(r.value)}
+                className={`flex flex-col items-center gap-1.5 rounded-xl border p-3 transition-all cursor-pointer ${colorMap[r.color]}`}
+              >
+                <Icon className={`h-5 w-5 ${iconColor[r.color]}`} />
+                <span className={`text-xs font-semibold ${active ? 'text-gray-900' : 'text-gray-600'}`}>{r.label}</span>
+                <span className="text-[10px] text-gray-400 leading-tight text-center hidden sm:block">{r.desc}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Progress */}
@@ -236,20 +294,37 @@ const Register = () => {
           </Field>
         </div>
 
-        {/* Row 2: Student ID & Phone */}
+        {/* Row 2: Role-specific ID & Phone */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Student ID" name="studentId" icon={CreditCard} touched={touchedFields.studentId} error={errors.studentId}>
-            <input
-              type="text"
-              name="studentId"
-              value={formData.studentId}
-              onChange={handleChange}
-              onBlur={handleBlur}
-              className={`${touchedFields.studentId && errors.studentId ? inputError : inputNormal} pl-11`}
-              placeholder="ASTU/22/1234"
-              disabled={isLoading}
-            />
-          </Field>
+          {selectedRole === 'student' && (
+            <Field label="Student ID" name="studentId" icon={CreditCard} touched={touchedFields.studentId} error={errors.studentId}>
+              <input
+                type="text"
+                name="studentId"
+                value={formData.studentId}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`${touchedFields.studentId && errors.studentId ? inputError : inputNormal} pl-11`}
+                placeholder="ASTU/22/1234"
+                disabled={isLoading}
+              />
+            </Field>
+          )}
+
+          {selectedRole === 'staff' && (
+            <Field label="Staff ID" name="staffId" icon={Briefcase} touched={touchedFields.staffId} error={errors.staffId}>
+              <input
+                type="text"
+                name="staffId"
+                value={formData.staffId}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                className={`${touchedFields.staffId && errors.staffId ? inputError : inputNormal} pl-11`}
+                placeholder="STAFF/2024/001"
+                disabled={isLoading}
+              />
+            </Field>
+          )}
 
           <Field label="Phone" name="phone" icon={Phone} touched={touchedFields.phone} error={errors.phone}>
             <input

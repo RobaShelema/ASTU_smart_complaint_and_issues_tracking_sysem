@@ -53,6 +53,12 @@
     font-family: 'Inter', sans-serif;
   }
 
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea,
+  select {
+    @apply dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:placeholder-gray-500;
+  }
+
   /* Custom scrollbar */
   ::-webkit-scrollbar {
     width: 8px;
@@ -357,13 +363,13 @@
 }
 
 @layer utilities {
-  /* Text utilities */
+  /* Text utilities — overflow-wrap as universal fallback */
   .text-balance {
-    text-wrap: balance;
+    overflow-wrap: break-word;
   }
 
   .text-pretty {
-    text-wrap: pretty;
+    overflow-wrap: break-word;
   }
 
   /* Animation utilities */
@@ -408,7 +414,7 @@
   /* Custom scrollbar hide */
   .scrollbar-hide {
     -ms-overflow-style: none;
-    scrollbar-width: none;
+    overflow: -moz-scrollbars-none;
   }
 
   .scrollbar-hide::-webkit-scrollbar {
@@ -421,6 +427,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 1;
+    line-clamp: 1;
   }
 
   .line-clamp-2 {
@@ -428,6 +435,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
   }
 
   .line-clamp-3 {
@@ -435,6 +443,7 @@
     display: -webkit-box;
     -webkit-box-orient: vertical;
     -webkit-line-clamp: 3;
+    line-clamp: 3;
   }
 }
 

@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
 import { formatDistanceToNow } from 'date-fns';
 import { Bot, User, ThumbsUp, ThumbsDown, Copy, Check } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import chatbotService from '../../services/api/chatbotService';
+
+const safeTimeAgo = (dateStr) => {
+  if (!dateStr) return '';
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return '';
+  return formatDistanceToNow(d, { addSuffix: true });
+};
 
 const ChatMessage = ({ message, isLast }) => {
   const [copied, setCopied] = useState(false);
   const [rating, setRating] = useState(null);
+  const msgText = message.text || message.content || '';
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(message.content);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(msgText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* clipboard not available */
+    }
   };
 
-  const handleRating = async (value) => {
+  const handleRating = (value) => {
     setRating(value);
-    await chatbotService.rateResponse(message.id, value);
   };
 
   const isBot = message.type === 'bot';
@@ -26,9 +35,11 @@ const ChatMessage = ({ message, isLast }) => {
       <div className={`flex max-w-[80%] ${isBot ? 'flex-row' : 'flex-row-reverse'}`}>
         {/* Avatar */}
         <div className={`flex-shrink-0 ${isBot ? 'mr-3' : 'ml-3'}`}>
-          <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
-            isBot ? 'bg-blue-100' : 'bg-green-100'
-          }`}>
+          <div
+            className={`h-8 w-8 rounded-full flex items-center justify-center ${
+              isBot ? 'bg-blue-100' : 'bg-green-100'
+            }`}
+          >
             {isBot ? (
               <Bot className="h-5 w-5 text-blue-600" />
             ) : (
@@ -44,35 +55,19 @@ const ChatMessage = ({ message, isLast }) => {
               isBot
                 ? 'bg-white border border-gray-200'
                 : 'bg-blue-600 text-white'
-            } ${message.isFallback ? 'border-yellow-300' : ''}`}
+            }`}
           >
-            {/* Message text with markdown support */}
-            {isBot ? (
-              <ReactMarkdown
-                className="prose prose-sm max-w-none"
-                components={{
-                  a: ({ node, ...props }) => (
-                    <a {...props} className="text-blue-600 hover:underline" target="_blank" />
-                  ),
-                  p: ({ node, ...props }) => <p {...props} className="mb-2 last:mb-0" />
-                }}
-              >
-                {message.content}
-              </ReactMarkdown>
-            ) : (
-              <p className="text-sm">{message.content}</p>
-            )}
+            <p className="text-sm whitespace-pre-wrap">{msgText}</p>
 
             {/* Timestamp */}
             <div className={`text-xs mt-1 ${isBot ? 'text-gray-400' : 'text-blue-200'}`}>
-              {formatDistanceToNow(new Date(message.timestamp), { addSuffix: true })}
+              {safeTimeAgo(message.timestamp)}
             </div>
           </div>
 
           {/* Message actions (for bot messages) */}
           {isBot && (
             <div className="flex items-center space-x-2 mt-1 ml-1">
-              {/* Copy button */}
               <button
                 onClick={handleCopy}
                 className="text-gray-400 hover:text-gray-600 transition-colors"
@@ -85,7 +80,6 @@ const ChatMessage = ({ message, isLast }) => {
                 )}
               </button>
 
-              {/* Rating buttons */}
               <button
                 onClick={() => handleRating('up')}
                 className={`transition-colors ${
@@ -95,7 +89,7 @@ const ChatMessage = ({ message, isLast }) => {
               >
                 <ThumbsUp className="h-3 w-3" />
               </button>
-              
+
               <button
                 onClick={() => handleRating('down')}
                 className={`transition-colors ${
@@ -105,13 +99,6 @@ const ChatMessage = ({ message, isLast }) => {
               >
                 <ThumbsDown className="h-3 w-3" />
               </button>
-
-              {/* Fallback indicator */}
-              {message.isFallback && (
-                <span className="text-xs text-yellow-600 ml-2">
-                  (Offline mode)
-                </span>
-              )}
             </div>
           )}
         </div>
