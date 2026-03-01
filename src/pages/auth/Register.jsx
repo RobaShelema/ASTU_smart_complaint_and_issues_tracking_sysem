@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -15,6 +15,24 @@ import {
 } from 'lucide-react';
 import authService from '../../services/api/authService';
 import toast from 'react-hot-toast';
+
+const Field = ({ label, name, icon: Icon, children, required = true, touched, error }) => (
+  <div>
+    <label className="block text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+      {required && <span className="text-red-500 ml-0.5">*</span>}
+    </label>
+    <div className="relative">
+      {Icon && (
+        <Icon className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-gray-400" />
+      )}
+      {children}
+    </div>
+    {touched && error && (
+      <p className="mt-1.5 text-xs text-red-600">{error}</p>
+    )}
+  </div>
+);
 
 const Register = () => {
   const navigate = useNavigate();
@@ -52,17 +70,17 @@ const Register = () => {
   const validatePhone = (phone) => /^(\+251|0)[97]\d{8}$/.test(phone);
   const validatePassword = (pw) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)[a-zA-Z\d]{8,}$/.test(pw);
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errors[name]) setErrors((prev) => ({ ...prev, [name]: '' }));
-  };
+    setErrors((prev) => (prev[name] ? { ...prev, [name]: '' } : prev));
+  }, []);
 
-  const handleBlur = (e) => {
-    const { name } = e.target;
+  const handleBlur = useCallback((e) => {
+    const { name, value } = e.target;
     setTouchedFields((prev) => ({ ...prev, [name]: true }));
-    validateField(name, formData[name]);
-  };
+    validateField(name, value);
+  }, []);
 
   const validateField = (name, value) => {
     let error = '';
@@ -156,24 +174,6 @@ const Register = () => {
   const inputNormal = `${inputBase} border-gray-200 focus:border-blue-500 focus:ring-blue-500/20`;
   const inputError = `${inputBase} border-red-300 focus:border-red-500 focus:ring-red-500/20`;
 
-  const Field = ({ label, name, icon: Icon, children, required = true }) => (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </label>
-      <div className="relative">
-        {Icon && (
-          <Icon className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 h-[18px] w-[18px] text-gray-400" />
-        )}
-        {children}
-      </div>
-      {touchedFields[name] && errors[name] && (
-        <p className="mt-1.5 text-xs text-red-600">{errors[name]}</p>
-      )}
-    </div>
-  );
-
   return (
     <div className="space-y-6">
       {/* Heading */}
@@ -209,7 +209,7 @@ const Register = () => {
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Row 1: Name & Email */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Full Name" name="fullName" icon={User}>
+          <Field label="Full Name" name="fullName" icon={User} touched={touchedFields.fullName} error={errors.fullName}>
             <input
               type="text"
               name="fullName"
@@ -222,7 +222,7 @@ const Register = () => {
             />
           </Field>
 
-          <Field label="Email" name="email" icon={Mail}>
+          <Field label="Email" name="email" icon={Mail} touched={touchedFields.email} error={errors.email}>
             <input
               type="email"
               name="email"
@@ -238,7 +238,7 @@ const Register = () => {
 
         {/* Row 2: Student ID & Phone */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Student ID" name="studentId" icon={CreditCard}>
+          <Field label="Student ID" name="studentId" icon={CreditCard} touched={touchedFields.studentId} error={errors.studentId}>
             <input
               type="text"
               name="studentId"
@@ -251,7 +251,7 @@ const Register = () => {
             />
           </Field>
 
-          <Field label="Phone" name="phone" icon={Phone}>
+          <Field label="Phone" name="phone" icon={Phone} touched={touchedFields.phone} error={errors.phone}>
             <input
               type="tel"
               name="phone"
@@ -266,7 +266,7 @@ const Register = () => {
         </div>
 
         {/* Department */}
-        <Field label="Department" name="department" icon={BookOpen}>
+        <Field label="Department" name="department" icon={BookOpen} touched={touchedFields.department} error={errors.department}>
           <select
             name="department"
             value={formData.department}
@@ -286,7 +286,7 @@ const Register = () => {
 
         {/* Row 3: Password & Confirm */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Password" name="password" icon={Lock}>
+          <Field label="Password" name="password" icon={Lock} touched={touchedFields.password} error={errors.password}>
             <input
               type={showPassword ? 'text' : 'password'}
               name="password"
@@ -311,7 +311,7 @@ const Register = () => {
             </button>
           </Field>
 
-          <Field label="Confirm Password" name="confirmPassword" icon={Lock}>
+          <Field label="Confirm Password" name="confirmPassword" icon={Lock} touched={touchedFields.confirmPassword} error={errors.confirmPassword}>
             <input
               type={showConfirmPassword ? 'text' : 'password'}
               name="confirmPassword"

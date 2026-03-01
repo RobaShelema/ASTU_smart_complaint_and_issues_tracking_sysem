@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { loginValidation } from '../../utils/validators/authValidator';
@@ -19,25 +19,23 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
 
-  const handleChange = (e) => {
+  const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
-  };
+    setErrors(prev => (prev[name] ? { ...prev, [name]: '' } : prev));
+  }, []);
 
-  const handleBlur = (e) => {
-    const { name } = e.target;
+  const handleBlur = useCallback((e) => {
+    const { name, value } = e.target;
     setTouchedFields(prev => ({ ...prev, [name]: true }));
-    const fieldErrors = loginValidation({ [name]: formData[name] });
+    const fieldErrors = loginValidation({ [name]: value });
     if (fieldErrors[name]) {
       setErrors(prev => ({ ...prev, [name]: fieldErrors[name] }));
     }
-  };
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -59,25 +57,6 @@ const Login = () => {
     }
   };
 
-  const handleDemoLogin = async (role) => {
-    const creds = {
-      student: { email: 'student@astu.edu.et', password: 'Student123' },
-      staff: { email: 'staff@astu.edu.et', password: 'Staff123' },
-      admin: { email: 'admin@astu.edu.et', password: 'Admin123' }
-    }[role];
-
-    setFormData({ ...creds, rememberMe: false });
-    setIsLoading(true);
-    try {
-      await login(creds);
-      toast.success('Login successful! Redirecting...');
-    } catch (error) {
-      toast.error(error.message || 'Login failed.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const inputBase =
     'block w-full rounded-xl border bg-white px-4 py-3 text-sm text-gray-900 placeholder-gray-400 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-0';
   const inputNormal = `${inputBase} border-gray-200 focus:border-blue-500 focus:ring-blue-500/20`;
@@ -91,40 +70,6 @@ const Login = () => {
         <p className="mt-1.5 text-sm text-gray-500">
           Sign in to your account to continue
         </p>
-      </div>
-
-      {/* Demo Quick Access */}
-      <div className="rounded-xl border border-dashed border-gray-300 bg-gray-50 p-4">
-        <p className="text-xs font-medium text-gray-500 mb-3 text-center uppercase tracking-wider">
-          Quick Demo Access
-        </p>
-        <div className="flex gap-2">
-          {[
-            { role: 'student', color: 'bg-blue-600 hover:bg-blue-700', label: 'Student' },
-            { role: 'staff', color: 'bg-emerald-600 hover:bg-emerald-700', label: 'Staff' },
-            { role: 'admin', color: 'bg-violet-600 hover:bg-violet-700', label: 'Admin' },
-          ].map((item) => (
-            <button
-              key={item.role}
-              type="button"
-              onClick={() => handleDemoLogin(item.role)}
-              disabled={isLoading}
-              className={`flex-1 py-2 text-xs font-semibold text-white rounded-lg transition-colors disabled:opacity-50 ${item.color}`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Divider */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-gray-200" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-gray-50 px-3 text-gray-400 font-medium">or sign in with email</span>
-        </div>
       </div>
 
       {/* Form Error */}

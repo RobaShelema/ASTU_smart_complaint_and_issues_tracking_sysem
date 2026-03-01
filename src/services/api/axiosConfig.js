@@ -156,16 +156,43 @@ const MOCK_USERS = [
   { id: 'u5', name: 'Admin User', email: 'admin@astu.edu.et', role: 'admin', department: 'Administration', joinedDate: '2023-06-01', status: 'active' },
 ];
 
+const VALID_ACCOUNTS = [
+  { email: 'student@astu.edu.et', password: 'Student123', role: 'student', name: 'Abebe Kebede', id: 'u1' },
+  { email: 'staff@astu.edu.et', password: 'Staff123', role: 'staff', name: 'Tekle Berhan', id: 'u3' },
+  { email: 'admin@astu.edu.et', password: 'Admin123', role: 'admin', name: 'Admin User', id: 'u5' },
+];
+
 function getMockLoginResponse(credentials) {
-  const email = (credentials?.email || '').toLowerCase();
-  let role = 'student';
-  if (email.includes('staff@')) role = 'staff';
-  else if (email.includes('admin@')) role = 'admin';
-  const name = role.charAt(0).toUpperCase() + role.slice(1) + ' User';
+  const email = (credentials?.email || '').toLowerCase().trim();
+  const password = credentials?.password || '';
+
+  // Check registered users from localStorage
+  const stored = localStorage.getItem('registeredUser');
+  let registeredAccounts = [];
+  if (stored) {
+    try {
+      const user = JSON.parse(stored);
+      registeredAccounts.push({
+        email: (user.email || '').toLowerCase(),
+        password: user.password || 'Password123',
+        role: 'student',
+        name: user.name || 'Student',
+        id: user.id || 'reg-' + Date.now(),
+      });
+    } catch (_) {}
+  }
+
+  const allAccounts = [...VALID_ACCOUNTS, ...registeredAccounts];
+  const match = allAccounts.find(a => a.email === email && a.password === password);
+
+  if (!match) {
+    throw new Error('Invalid email or password. Please check your credentials and try again.');
+  }
+
   return {
     token: 'mock-jwt-' + Math.random().toString(36).slice(2),
     refreshToken: 'mock-refresh-' + Math.random().toString(36).slice(2),
-    user: { id: 'mock-' + role, name, email: credentials?.email || '', role },
+    user: { id: match.id, name: match.name, email: match.email, role: match.role },
   };
 }
 
@@ -258,6 +285,17 @@ export const api = {
   post: async (url, data = {}, config = {}) => {
     if (import.meta.env.DEV) console.log('Mock API POST:', url, data);
     if (url === '/auth/login' && data) return { data: getMockLoginResponse(data) };
+    if (url === '/auth/register' && data) {
+      const newUser = {
+        id: 'reg-' + Date.now(),
+        name: data.name || data.fullName || 'New User',
+        email: (data.email || '').toLowerCase().trim(),
+        password: data.password,
+        role: 'student',
+      };
+      localStorage.setItem('registeredUser', JSON.stringify(newUser));
+      return { data: { success: true, message: 'Registration successful! Please login with your credentials.', user: newUser } };
+    }
     if (url === '/auth/logout') return { data: { success: true } };
     if (url.includes('/complaints') && !url.includes('/assign') && !url.includes('/resolve') && !url.includes('/comments'))
       return { data: { id: 'CMP' + Date.now().toString().slice(-4), ...data, status: 'pending', createdAt: new Date().toISOString() } };
