@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { loginValidation } from '../../utils/validators/authValidator';
@@ -61,11 +61,6 @@ const Login = () => {
   const expectedRole = validRoles.includes(role) ? role : null;
   const roleInfo = expectedRole ? ROLE_INFO[expectedRole] : null;
 
-  if (!expectedRole) {
-    navigate('/login', { replace: true });
-    return null;
-  }
-
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -76,6 +71,12 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
+
+  useEffect(() => {
+    if (!expectedRole) {
+      navigate('/login', { replace: true });
+    }
+  }, [expectedRole, navigate]);
 
   const handleChange = useCallback((e) => {
     const { name, value, type, checked } = e.target;
@@ -119,6 +120,8 @@ const Login = () => {
     'block w-full rounded-xl border bg-white dark:bg-gray-800 px-4 py-3 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-400 dark:placeholder-gray-500 shadow-sm transition-all focus:outline-none focus:ring-2 focus:ring-offset-0 dark:focus:ring-offset-gray-900';
   const inputNormal = `${inputBase} border-gray-200 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500/20`;
   const inputError = `${inputBase} border-red-300 dark:border-red-500/50 focus:border-red-500 focus:ring-red-500/20`;
+
+  if (!expectedRole) return null;
 
   return (
     <div className="space-y-7">
