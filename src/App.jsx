@@ -18,6 +18,7 @@ import PublicRoute from './routes/PublicRoute';
 import LandingPage from './pages/LandingPage';
 import Login from './pages/auth/Login';
 import Register from './pages/auth/Register';
+import RoleSelection from './pages/auth/RoleSelection';
 import ForgotPassword from './pages/auth/ForgotPassword';
 import ResetPassword from './pages/auth/ResetPassword';
 
@@ -82,9 +83,10 @@ function App() {
                 {/* Public Routes */}
                 <Route path="/" element={<LandingPage />} />
                 
+                <Route path="/login" element={<RoleSelection />} />
                 <Route element={<PublicRoute />}>
                   <Route element={<AuthLayout />}>
-                    <Route path="/login" element={<Login />} />
+                    <Route path="/login/:role" element={<Login />} />
                     <Route path="/register" element={<Register />} />
                     <Route path="/forgot-password" element={<ForgotPassword />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
@@ -123,6 +125,7 @@ function App() {
                   <Route element={<DashboardLayout />}>
                     <Route path="/admin/dashboard" element={<AdminDashboard />} />
                     <Route path="/admin/complaints" element={<ManageComplaints />} />
+                    <Route path="/admin/complaints/:id" element={<ComplaintDetails backPath="/admin/complaints" />} />
                     <Route path="/admin/users" element={<ManageUsers />} />
                     <Route path="/admin/categories" element={<ManageCategories />} />
                     <Route path="/admin/departments" element={<ManageDepartments />} />

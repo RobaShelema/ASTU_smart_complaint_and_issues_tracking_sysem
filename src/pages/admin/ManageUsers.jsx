@@ -81,29 +81,59 @@ const ManageUsers = () => {
     }
   };
 
-  const handleBulkAction = async (action) => {
+  const handleBulkAction = (action) => {
     if (selectedUsers.length === 0) {
       toast.error('Please select users first');
       return;
     }
 
-    try {
-      await adminService.bulkUserAction(selectedUsers, action);
-      toast.success(`Bulk ${action} completed`);
-      setSelectedUsers([]);
-      fetchUsers();
-    } catch (error) {
-      toast.error(`Failed to perform bulk ${action}`);
+    if (action === 'activate') {
+      setUsers(prev => prev.map(u =>
+        selectedUsers.includes(u.id) ? { ...u, status: 'active' } : u
+      ));
+      toast.success(`${selectedUsers.length} user(s) activated`);
+    } else if (action === 'deactivate') {
+      setUsers(prev => prev.map(u =>
+        selectedUsers.includes(u.id) ? { ...u, status: 'inactive' } : u
+      ));
+      toast.success(`${selectedUsers.length} user(s) deactivated`);
+    } else if (action === 'delete') {
+      if (!window.confirm(`Are you sure you want to delete ${selectedUsers.length} user(s)? This cannot be undone.`)) return;
+      setUsers(prev => prev.filter(u => !selectedUsers.includes(u.id)));
+      toast.success(`${selectedUsers.length} user(s) deleted`);
     }
+
+    setSelectedUsers([]);
   };
 
-  const handleExport = async (format) => {
-    try {
-      await adminService.exportUsers(format, selectedUsers);
-      toast.success(`Users exported as ${format.toUpperCase()}`);
-    } catch (error) {
-      toast.error('Failed to export users');
+  const handleExport = () => {
+    const usersToExport = selectedUsers.length > 0
+      ? users.filter(u => selectedUsers.includes(u.id))
+      : filteredUsers;
+
+    if (usersToExport.length === 0) {
+      toast.error('No users to export');
+      return;
     }
+
+    const headers = ['ID', 'Name', 'Email', 'Role', 'Department', 'Status'];
+    const rows = usersToExport.map(u => [
+      u.id,
+      `"${(u.name || '').replace(/"/g, '""')}"`,
+      u.email || '',
+      u.role || '',
+      u.department || '',
+      u.status || ''
+    ]);
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `users-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(`${usersToExport.length} user(s) exported as CSV`);
   };
 
   const filteredUsers = users.filter(user => {
@@ -242,7 +272,7 @@ const ManageUsers = () => {
                 Delete
               </button>
               <button
-                onClick={() => handleExport('csv')}
+                onClick={handleExport}
                 className="px-3 py-1 text-sm text-blue-700 hover:bg-blue-100 rounded"
               >
                 Export

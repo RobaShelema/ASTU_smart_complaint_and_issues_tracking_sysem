@@ -41,7 +41,9 @@ class AuthService {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      localStorage.clear();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
       delete api.defaults.headers.common['Authorization'];
     }
   }

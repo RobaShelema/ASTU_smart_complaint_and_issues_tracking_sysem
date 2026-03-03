@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import complaintService from '../../services/api/complaintService';
 import AssignedComplaintsTable from '../../components/tables/AssignedComplaintsTable';
+import ResolutionModal from '../../components/modals/ResolutionModal';
 import StatusFilter from '../../components/common/StatusFilter';
 import { Filter, Download, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -10,6 +11,7 @@ const AssignedComplaints = () => {
   const [loading, setLoading] = useState(true);
   const [selectedStatuses, setSelectedStatuses] = useState([]);
   const [priorityFilter, setPriorityFilter] = useState('all');
+  const [resolveTarget, setResolveTarget] = useState(null);
   const [stats, setStats] = useState({
     total: 0,
     pending: 0,
@@ -55,8 +57,19 @@ const AssignedComplaints = () => {
     }
   };
 
-  const handleResolve = async (complaint) => {
-    // Navigate to resolution page or open modal
+  const handleResolve = (complaint) => {
+    setResolveTarget(complaint);
+  };
+
+  const handleResolutionSubmit = async (resolutionData) => {
+    try {
+      await complaintService.resolveComplaint(resolveTarget.id, resolutionData);
+      toast.success('Complaint resolved successfully');
+      setResolveTarget(null);
+      fetchAssignedComplaints();
+    } catch (error) {
+      toast.error('Failed to resolve complaint');
+    }
   };
 
   const handleExport = () => {
@@ -195,6 +208,14 @@ const AssignedComplaints = () => {
           onResolve={handleResolve}
         />
       </div>
+
+      {resolveTarget && (
+        <ResolutionModal
+          complaint={resolveTarget}
+          onClose={() => setResolveTarget(null)}
+          onSubmit={handleResolutionSubmit}
+        />
+      )}
     </div>
   );
 };

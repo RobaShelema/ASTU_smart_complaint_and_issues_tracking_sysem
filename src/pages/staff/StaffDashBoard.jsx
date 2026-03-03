@@ -30,6 +30,8 @@ import {
   Cell
 } from 'recharts';
 
+import ResolutionModal from '../../components/modals/ResolutionModal';
+
 const StaffDashboard = () => {
   const { user } = useAuth();
   const { addNotification } = useNotifications();

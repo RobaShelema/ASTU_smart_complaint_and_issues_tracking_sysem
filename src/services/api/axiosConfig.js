@@ -87,15 +87,17 @@ axiosInstance.interceptors.response.use(
             return axiosInstance(originalRequest);
           }
         } catch (refreshError) {
-          // Refresh failed - redirect to login
-          localStorage.clear();
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('refreshToken');
           window.location.href = '/login';
           toast.error('Session expired. Please login again.');
           return Promise.reject(refreshError);
         }
       } else {
-        // No refresh token - redirect to login
-        localStorage.clear();
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refreshToken');
         window.location.href = '/login';
         toast.error('Session expired. Please login again.');
       }
@@ -221,8 +223,14 @@ function getMockGetResponse(url) {
     return MOCK_COMPLAINTS;
   if (url.includes('/complaints/assigned') || url.includes('/complaints/staff'))
     return MOCK_COMPLAINTS.filter(c => c.status !== 'closed');
-  if (url.includes('/complaints/stats'))
-    return { total: 6, pending: 2, inProgress: 2, resolved: 1, closed: 1 };
+  if (url.includes('/complaints/stats')) {
+    const total = MOCK_COMPLAINTS.length;
+    const pending = MOCK_COMPLAINTS.filter(c => c.status === 'pending').length;
+    const inProgress = MOCK_COMPLAINTS.filter(c => c.status === 'in_progress').length;
+    const resolved = MOCK_COMPLAINTS.filter(c => c.status === 'resolved').length;
+    const closed = MOCK_COMPLAINTS.filter(c => c.status === 'closed').length;
+    return { total, pending, inProgress, resolved, closed };
+  }
   if (url.includes('/complaints/recent'))
     return MOCK_COMPLAINTS;
 
@@ -316,16 +324,59 @@ export const api = {
       return { data: { success: true, message: 'Registration successful! Please login with your credentials.', user: newUser } };
     }
     if (url === '/auth/logout') return { data: { success: true } };
-    if (url.includes('/complaints') && !url.includes('/assign') && !url.includes('/resolve') && !url.includes('/comments'))
-      return { data: { id: 'CMP' + Date.now().toString().slice(-4), ...data, status: 'pending', createdAt: new Date().toISOString() } };
+
+    const resolveMatch = url.match(/\/complaints\/([^/]+)\/resolve$/);
+    if (resolveMatch) {
+      const complaint = MOCK_COMPLAINTS.find(c => c.id === resolveMatch[1]);
+      if (complaint) {
+        complaint.status = 'resolved';
+        complaint.resolvedAt = new Date().toISOString();
+        complaint.resolution = data.resolution || data.remarks || '';
+      }
+      return { data: { success: true, complaint } };
+    }
+
+    const assignMatch = url.match(/\/complaints\/([^/]+)\/assign$/);
+    if (assignMatch) {
+      const complaint = MOCK_COMPLAINTS.find(c => c.id === assignMatch[1]);
+      if (complaint) {
+        complaint.assignedTo = data.staffId || data.assignedTo || complaint.assignedTo;
+        complaint.assignedAt = new Date().toISOString();
+        if (complaint.status === 'pending') complaint.status = 'in_progress';
+      }
+      return { data: { success: true, complaint } };
+    }
+
+    if (url.includes('/complaints') && !url.includes('/comments')) {
+      const newComplaint = { id: 'CMP' + Date.now().toString().slice(-4), ...data, status: 'pending', createdAt: new Date().toISOString() };
+      MOCK_COMPLAINTS.unshift(newComplaint);
+      return { data: newComplaint };
+    }
+
     return { data: { success: true } };
   },
   put: async (url, data = {}, config = {}) => {
     if (import.meta.env.DEV) console.log('Mock API PUT:', url, data);
+    const putMatch = url.match(/\/complaints\/([^/]+)$/);
+    if (putMatch) {
+      const complaint = MOCK_COMPLAINTS.find(c => c.id === putMatch[1]);
+      if (complaint) Object.assign(complaint, data);
+      return { data: { success: true, complaint } };
+    }
     return { data: { success: true, ...data } };
   },
   patch: async (url, data = {}, config = {}) => {
     if (import.meta.env.DEV) console.log('Mock API PATCH:', url, data);
+    const statusMatch = url.match(/\/complaints\/([^/]+)\/status$/);
+    if (statusMatch) {
+      const complaint = MOCK_COMPLAINTS.find(c => c.id === statusMatch[1]);
+      if (complaint) {
+        complaint.status = data.status;
+        if (data.status === 'resolved') complaint.resolvedAt = new Date().toISOString();
+        if (data.remarks) complaint.lastNote = data.remarks;
+      }
+      return { data: { success: true, complaint } };
+    }
     return { data: { success: true, ...data } };
   },
   delete: async (url, config = {}) => {

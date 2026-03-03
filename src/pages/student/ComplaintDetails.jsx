@@ -24,7 +24,7 @@ const safeFormat = (dateStr, pattern) => {
   return format(d, pattern);
 };
 
-const ComplaintDetails = () => {
+const ComplaintDetails = ({ backPath = '/student/complaints' }) => {
   const { id } = useParams();
   const [complaint, setComplaint] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +72,7 @@ const ComplaintDetails = () => {
       <div className="text-center py-12">
         <AlertCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <h3 className="text-lg font-medium text-gray-900">Complaint not found</h3>
-        <Link to="/student/complaints" className="mt-4 text-blue-600 hover:text-blue-800">
+        <Link to={backPath} className="mt-4 text-blue-600 hover:text-blue-800">
           Back to Complaints
         </Link>
       </div>
@@ -84,7 +84,7 @@ const ComplaintDetails = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <Link
-          to="/student/complaints"
+          to={backPath}
           className="inline-flex items-center text-gray-600 hover:text-gray-900"
         >
           <ArrowLeft className="h-4 w-4 mr-1" />

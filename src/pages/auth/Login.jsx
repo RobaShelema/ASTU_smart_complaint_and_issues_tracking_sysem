@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { loginValidation } from '../../utils/validators/authValidator';
 import { Mail, Lock, LogIn, Eye, EyeOff, AlertCircle, ArrowRight, ChevronDown, ChevronUp, Info } from 'lucide-react';
@@ -47,8 +47,24 @@ const DemoCredentials = () => {
   );
 };
 
+const ROLE_INFO = {
+  student: { title: 'Student Portal', desc: 'Sign in to submit and track your complaints', demo: DEMO_ACCOUNTS.find(a => a.role === 'Student') },
+  staff: { title: 'Staff Portal', desc: 'Sign in to manage assigned complaints', demo: DEMO_ACCOUNTS.find(a => a.role === 'Staff') },
+  admin: { title: 'Admin Portal', desc: 'Sign in to manage the entire system', demo: DEMO_ACCOUNTS.find(a => a.role === 'Admin') },
+};
+
 const Login = () => {
   const { login } = useAuth();
+  const { role } = useParams();
+  const navigate = useNavigate();
+  const validRoles = ['student', 'staff', 'admin'];
+  const expectedRole = validRoles.includes(role) ? role : null;
+  const roleInfo = expectedRole ? ROLE_INFO[expectedRole] : null;
+
+  if (!expectedRole) {
+    navigate('/login', { replace: true });
+    return null;
+  }
 
   const [formData, setFormData] = useState({
     email: '',
@@ -88,7 +104,7 @@ const Login = () => {
     if (Object.keys(validationErrors).length === 0) {
       setIsLoading(true);
       try {
-        await login({ email: formData.email, password: formData.password });
+        await login({ email: formData.email, password: formData.password }, expectedRole);
         toast.success('Login successful! Redirecting...');
       } catch (error) {
         toast.error(error.message || 'Login failed. Please check your credentials.');
@@ -108,9 +124,11 @@ const Login = () => {
     <div className="space-y-7">
       {/* Heading */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">Welcome back</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+          {roleInfo?.title || 'Welcome back'}
+        </h2>
         <p className="mt-1.5 text-sm text-gray-500 dark:text-gray-400">
-          Sign in to your account to continue
+          {roleInfo?.desc || 'Sign in to your account to continue'}
         </p>
       </div>
 
@@ -217,6 +235,13 @@ const Login = () => {
 
       {/* Demo Credentials */}
       <DemoCredentials />
+
+      {/* Back to role selection */}
+      <p className="text-center text-sm text-gray-500">
+        <Link to="/login" className="font-semibold text-gray-600 hover:text-gray-800 transition-colors">
+          ← Back to role selection
+        </Link>
+      </p>
 
       {/* Register link */}
       <p className="text-center text-sm text-gray-500">

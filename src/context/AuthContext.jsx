@@ -108,13 +108,19 @@ export const AuthProvider = ({ children }) => {
   }, [refreshToken]);
 
   // Login
-  const login = async (credentials) => {
+  const login = async (credentials, expectedRole) => {
     try {
       setLoading(true);
       const response = await authService.login(credentials);
       
       if (response.token && response.user) {
-        // Store in localStorage
+        if (expectedRole && response.user.role !== expectedRole) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          localStorage.removeItem('refreshToken');
+          throw new Error(`This account is registered as "${response.user.role}". Please use the ${response.user.role} login page.`);
+        }
+
         localStorage.setItem('token', response.token);
         localStorage.setItem('user', JSON.stringify(response.user));
         if (response.refreshToken) {
@@ -122,7 +128,6 @@ export const AuthProvider = ({ children }) => {
           setRefreshToken(response.refreshToken);
         }
 
-        // Update state
         setUser(response.user);
         setToken(response.token);
         setIsAuthenticated(true);
@@ -130,7 +135,6 @@ export const AuthProvider = ({ children }) => {
 
         toast.success(`Welcome back, ${response.user.name}!`);
         
-        // Redirect after React commits state (next tick), so PrivateRoute sees user
         const dashboardRoutes = {
           student: '/student/dashboard',
           staff: '/staff/dashboard',
@@ -155,8 +159,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       const response = await authService.register(userData);
       
-      toast.success('Registration successful! Please check your email to verify your account.');
-      navigate('/login');
+      toast.success('Registration successful! Please login with your credentials.');
       
       return response;
     } catch (error) {

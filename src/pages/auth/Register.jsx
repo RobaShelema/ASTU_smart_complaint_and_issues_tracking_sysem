@@ -178,7 +178,7 @@ const Register = () => {
       const response = await authService.register(payload);
       toast.success(response.message || 'Registration successful!');
       setTimeout(() => {
-        navigate('/login', { state: { message: 'Registration successful! Please login.' } });
+        navigate(`/login/${selectedRole}`, { state: { message: 'Registration successful! Please login.' } });
       }, 2000);
     } catch (error) {
       toast.error(error.message || 'Registration failed.');
@@ -465,7 +465,7 @@ const Register = () => {
       {/* Login link */}
       <p className="text-center text-sm text-gray-500">
         Already have an account?{' '}
-        <Link to="/login" className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
+        <Link to={`/login/${selectedRole}`} className="font-semibold text-blue-600 hover:text-blue-700 transition-colors">
           Sign in
         </Link>
       </p>

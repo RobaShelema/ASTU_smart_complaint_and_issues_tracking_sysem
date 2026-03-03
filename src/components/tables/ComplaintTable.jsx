@@ -18,7 +18,7 @@ const safeTimeAgo = (dateStr) => {
   return formatDistanceToNow(d, { addSuffix: true });
 };
 
-const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) => {
+const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true, linkPrefix = '/student/complaints' }) => {
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
   const [searchTerm, setSearchTerm] = useState('');
@@ -234,7 +234,7 @@ const ComplaintTable = ({ complaints, loading, onViewAll, showActions = true }) 
                   {showActions && (
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <Link
-                        to={`/student/complaints/${complaint.id}`}
+                        to={`${linkPrefix}/${complaint.id}`}
                         className="text-blue-600 hover:text-blue-900 inline-flex items-center space-x-1"
                       >
                         <Eye className="h-4 w-4" />

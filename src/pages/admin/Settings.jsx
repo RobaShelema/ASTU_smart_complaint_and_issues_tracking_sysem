@@ -17,66 +17,68 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+const SETTINGS_STORAGE_KEY = 'astu_system_settings';
+
+const DEFAULT_SETTINGS = {
+  general: {
+    siteName: 'ASTU Complaint System',
+    siteUrl: 'https://complaints.astu.edu.et',
+    adminEmail: 'admin@astu.edu.et',
+    timezone: 'Africa/Addis_Ababa',
+    dateFormat: 'YYYY-MM-DD',
+    timeFormat: '24h',
+    language: 'en'
+  },
+  notifications: {
+    emailNotifications: true,
+    pushNotifications: true,
+    smsNotifications: false,
+    notifyOnNewComplaint: true,
+    notifyOnStatusChange: true,
+    notifyOnAssignment: true,
+    notifyOnEscalation: true,
+    dailyDigest: true,
+    weeklyReport: true
+  },
+  security: {
+    twoFactorAuth: false,
+    sessionTimeout: 30,
+    passwordExpiry: 90,
+    maxLoginAttempts: 5,
+    requireEmailVerification: true,
+    ipWhitelist: [],
+    allowedDomains: ['astu.edu.et']
+  },
+  complaints: {
+    autoAssign: true,
+    escalationHours: 48,
+    maxAttachments: 5,
+    maxFileSize: 5,
+    allowAnonymous: false,
+    requireLocation: true,
+    defaultPriority: 'medium',
+    enableCategories: true
+  },
+  system: {
+    maintenanceMode: false,
+    debugMode: false,
+    logRetention: 30,
+    backupFrequency: 'daily',
+    backupTime: '02:00',
+    cacheEnabled: true,
+    cacheTTL: 3600
+  }
+};
+
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState({
-    // General Settings
-    general: {
-      siteName: 'ASTU Complaint System',
-      siteUrl: 'https://complaints.astu.edu.et',
-      adminEmail: 'admin@astu.edu.et',
-      timezone: 'Africa/Addis_Ababa',
-      dateFormat: 'YYYY-MM-DD',
-      timeFormat: '24h',
-      language: 'en'
-    },
-    
-    // Notification Settings
-    notifications: {
-      emailNotifications: true,
-      pushNotifications: true,
-      smsNotifications: false,
-      notifyOnNewComplaint: true,
-      notifyOnStatusChange: true,
-      notifyOnAssignment: true,
-      notifyOnEscalation: true,
-      dailyDigest: true,
-      weeklyReport: true
-    },
-    
-    // Security Settings
-    security: {
-      twoFactorAuth: false,
-      sessionTimeout: 30,
-      passwordExpiry: 90,
-      maxLoginAttempts: 5,
-      requireEmailVerification: true,
-      ipWhitelist: [],
-      allowedDomains: ['astu.edu.et']
-    },
-    
-    // Complaint Settings
-    complaints: {
-      autoAssign: true,
-      escalationHours: 48,
-      maxAttachments: 5,
-      maxFileSize: 5,
-      allowAnonymous: false,
-      requireLocation: true,
-      defaultPriority: 'medium',
-      enableCategories: true
-    },
-    
-    // System Settings
-    system: {
-      maintenanceMode: false,
-      debugMode: false,
-      logRetention: 30,
-      backupFrequency: 'daily',
-      backupTime: '02:00',
-      cacheEnabled: true,
-      cacheTTL: 3600
+  const [settings, setSettings] = useState(() => {
+    try {
+      const saved = localStorage.getItem(SETTINGS_STORAGE_KEY);
+      return saved ? JSON.parse(saved) : DEFAULT_SETTINGS;
+    } catch {
+      return DEFAULT_SETTINGS;
     }
   });
 
@@ -91,7 +93,8 @@ const Settings = () => {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await adminService.updateSettings(settings);
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+      await new Promise(r => setTimeout(r, 400));
       toast.success('Settings saved successfully');
     } catch (error) {
       toast.error('Failed to save settings');
@@ -100,21 +103,79 @@ const Settings = () => {
     }
   };
 
-  const handleBackup = async () => {
+  const handleBackup = () => {
     try {
-      await adminService.createBackup();
-      toast.success('Backup created successfully');
+      const backupData = {
+        settings,
+        exportedAt: new Date().toISOString(),
+        version: '1.0',
+        source: 'ASTU Complaint System'
+      };
+
+      const allKeys = {};
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        try { allKeys[key] = JSON.parse(localStorage.getItem(key)); } catch { allKeys[key] = localStorage.getItem(key); }
+      }
+      backupData.localStorageSnapshot = allKeys;
+
+      const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `astu-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      link.click();
+      URL.revokeObjectURL(url);
+      toast.success('Backup downloaded successfully');
     } catch (error) {
       toast.error('Failed to create backup');
     }
   };
 
-  const handleClearCache = async () => {
+  const handleClearCache = () => {
     try {
-      await adminService.clearCache();
-      toast.success('Cache cleared successfully');
+      const preserveKeys = ['token', 'user', 'refreshToken', 'registeredUsers', SETTINGS_STORAGE_KEY];
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (!preserveKeys.includes(key)) keysToRemove.push(key);
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+      toast.success(`Cache cleared — removed ${keysToRemove.length} cached item(s)`);
     } catch (error) {
       toast.error('Failed to clear cache');
+    }
+  };
+
+  const handleResetSystem = () => {
+    if (!window.confirm('WARNING: This will reset all system data including complaints. This cannot be undone. Continue?')) return;
+    if (!window.confirm('Are you absolutely sure? All complaint data will be permanently lost.')) return;
+    const preserveKeys = ['token', 'user', 'refreshToken', 'registeredUsers'];
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!preserveKeys.includes(key)) keysToRemove.push(key);
+    }
+    keysToRemove.forEach(k => localStorage.removeItem(k));
+    setSettings(DEFAULT_SETTINGS);
+    toast.success('System has been reset to defaults');
+  };
+
+  const handleDeleteInactiveUsers = () => {
+    if (!window.confirm('This will remove all inactive users from the system. Continue?')) return;
+    try {
+      const stored = localStorage.getItem('registeredUsers');
+      if (stored) {
+        const users = JSON.parse(stored);
+        const active = users.filter(u => u.status !== 'inactive');
+        const removed = users.length - active.length;
+        localStorage.setItem('registeredUsers', JSON.stringify(active));
+        toast.success(`${removed} inactive user(s) removed`);
+      } else {
+        toast.success('No inactive users found');
+      }
+    } catch (error) {
+      toast.error('Failed to delete inactive users');
     }
   };
 
@@ -865,7 +926,10 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              <button
+                onClick={handleResetSystem}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
                 Reset System
               </button>
             </div>
@@ -880,7 +944,10 @@ const Settings = () => {
                   </p>
                 </div>
               </div>
-              <button className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+              <button
+                onClick={handleDeleteInactiveUsers}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
                 Delete Users
               </button>
             </div>
