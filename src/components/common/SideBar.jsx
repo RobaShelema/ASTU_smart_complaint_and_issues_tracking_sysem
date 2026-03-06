@@ -19,7 +19,9 @@ import {
   Tag,
   Activity,
   Download,
-  X
+  X,
+  Compass,
+  MessageCircle,
 } from 'lucide-react';
 
 const Sidebar = ({ onClose }) => {
@@ -48,15 +50,20 @@ const Sidebar = ({ onClose }) => {
         to: '/student/complaints', 
         icon: FolderOpen, 
         label: 'My Complaints',
-        description: 'Track your complaints',
-        badge: '3' // Example: active complaints count
+        description: 'View all your complaints'
+      },
+      { 
+        to: '/student/track', 
+        icon: Compass, 
+        label: 'Track Status',
+        description: 'Real-time progress tracker'
       },
       { 
         to: '/student/history', 
         icon: Clock, 
         label: 'History',
-        description: 'View complaint history'
-      }
+        description: 'View resolved complaints'
+      },
     ];
 
     const staffItems = [

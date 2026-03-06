@@ -29,6 +29,7 @@ import MyComplaints from './pages/student/MyComplaints';
 import ComplaintDetails from './pages/student/ComplaintDetails';
 import StudentProfile from './pages/student/StudentProfile';
 import ComplaintHistory from './pages/student/ComplaintHistory';
+import TrackStatus from './pages/student/TrackStatus';
 
 // Staff Pages
 import StaffDashBoard from './pages/staff/StaffDashBoard';
@@ -100,6 +101,7 @@ function App() {
                     <Route path="/student/new-complaint" element={<NewComplaint />} />
                     <Route path="/student/complaints" element={<MyComplaints />} />
                     <Route path="/student/complaints/:id" element={<ComplaintDetails />} />
+                    <Route path="/student/track" element={<TrackStatus />} />
                     <Route path="/student/history" element={<ComplaintHistory />} />
                     <Route path="/student/profile" element={<StudentProfile />} />
                     <Route path="/help" element={<HelpSupport />} />
