@@ -126,7 +126,7 @@ const LandingPage = () => {
               to="/register"
               className="text-[13px] font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 px-5 py-2.5 rounded-xl shadow-md shadow-blue-600/20 hover:shadow-lg hover:shadow-blue-600/30 transition-all"
             >
-              Get Started Free
+              Register
             </Link>
           </div>
 
@@ -169,7 +169,7 @@ const LandingPage = () => {
                 onClick={() => setMobileMenuOpen(false)}
                 className="flex-1 text-center text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl py-2.5 shadow-md shadow-blue-600/20"
               >
-                Get Started
+                Register
               </Link>
             </div>
           </div>
